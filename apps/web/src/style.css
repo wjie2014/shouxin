@@ -471,14 +471,19 @@ nav button.active b {
 
 .avatar {
   width: 36px;
+  min-width: 36px;
+  max-width: 36px;
   height: 36px;
-  flex: none;
+  aspect-ratio: 1;
+  flex: 0 0 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary), #4b9bff);
   color: #fff;
+  font-size: 14px;
   font-weight: 700;
   display: grid;
   place-items: center;
+  overflow: hidden;
 }
 
 .user > div {

@@ -557,8 +557,14 @@ function Dashboard({ token }: { token: string }) {
                       background: statusColors[i % statusColors.length],
                     }}
                   />
-                  {x.name}
+                  <em>{x.name}</em>
                   <b>{x.value}</b>
+                  <u>
+                    {statusTotal
+                      ? Math.round((x.value / statusTotal) * 100)
+                      : 0}
+                    %
+                  </u>
                 </span>
               ))}
             </div>
@@ -2017,7 +2023,7 @@ function Domains({ token }: { token: string }) {
       <div className="toolbar">
         <h3>知识目录</h3>
         <button className="primary" onClick={() => setShow(true)}>
-          + 新增目录
+          + ��增目录
         </button>
       </div>
       {msg && <p className="muted">{msg}</p>}
@@ -2941,7 +2947,7 @@ function FieldSchemeUI({ token }: { token: string }) {
             <h3>确认删除</h3>
             <p>
               确定删除“{deleting.item.field_name || deleting.item.scheme_name}
-              ”吗？删除后无法恢复。
+              ”��？删除后无法恢复。
             </p>
             <div className="modal-actions">
               <button className="danger-solid" onClick={confirmDelete}>

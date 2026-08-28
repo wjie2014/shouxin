@@ -816,6 +816,7 @@ h2 {
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: start;
   gap: 16px;
   margin-top: 16px;
 }
@@ -838,15 +839,11 @@ section.panel {
 /* =========================================================================
    仪表盘 · 环形图 / 条形 / 折线
    ========================================================================= */
-.status-panel {
-  min-height: 250px;
-}
-
 .donut-wrap {
   display: flex;
   align-items: center;
-  gap: 28px;
-  min-height: 190px;
+  gap: 32px;
+  padding: 8px 0;
 }
 
 .donut {
@@ -968,61 +965,78 @@ section.panel {
   color: var(--muted);
 }
 
-.trend-chart {
-  min-height: 150px;
-}
-
-.trend-line-chart {
+.trend-bar-chart {
   display: block;
-  min-height: 190px;
 }
 
-.trend-line-chart svg {
-  width: 100%;
-  height: 160px;
-  overflow: visible;
-}
-
-.trend-line {
-  fill: none;
-  stroke: var(--primary);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.trend-area {
-  fill: url(#trendFill);
-}
-
-.trend-point {
-  fill: #fff;
-  stroke: var(--primary);
-  stroke-width: 1.8;
-  transition: r 0.18s, stroke-width 0.18s;
-}
-
-.trend-point:hover {
-  r: 5;
-  stroke-width: 3;
-  cursor: pointer;
-}
-
-.trend-labels {
+.trend-bars {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: 10px;
+  align-items: flex-end;
+  gap: 6px;
+  height: 200px;
+  padding-top: 16px;
 }
 
-.trend-labels span:nth-child(n + 2):nth-last-child(n + 2) {
-  display: none;
+.trend-bar-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.trend-bar-track {
+  flex: 1;
+  width: 100%;
+  max-width: 34px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.trend-bar-fill {
+  position: relative;
+  width: 100%;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(180deg, #4b9bff, var(--primary));
+  transition: height 0.5s var(--ease), filter 0.2s var(--ease);
+}
+
+.trend-bar-fill:hover {
+  filter: brightness(1.08);
+}
+
+.trend-bar-value {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.trend-bar-fill:hover .trend-bar-value {
+  opacity: 1;
+}
+
+.trend-bar-label {
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .trend-placeholder {
-  height: 150px;
+  height: 160px;
   border-radius: var(--radius);
   background: linear-gradient(180deg, var(--surface-alt), var(--surface));
   display: flex;

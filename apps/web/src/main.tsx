@@ -497,33 +497,27 @@ function Dashboard({ token }: { token: string }) {
     1,
     statusItems.reduce((s: number, x: any) => s + x.value, 0),
   );
+  const statusColors = [
+    "#2563eb",
+    "#38bdf8",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#10b981",
+  ];
   const statusGradient = statusItems
     .reduce((parts: string[], x: any, i: number) => {
-      const colors = [
-        "#087e8b",
-        "#5b7cfa",
-        "#f59e0b",
-        "#d96c75",
-        "#8b5cf6",
-        "#3aa675",
-      ];
       const start =
         (statusItems.slice(0, i).reduce((s: number, y: any) => s + y.value, 0) /
           statusTotal) *
         100;
       return parts.concat(
-        `${colors[i % colors.length]} ${start}% ${start + (x.value / statusTotal) * 100}%`,
+        `${statusColors[i % statusColors.length]} ${start}% ${start + (x.value / statusTotal) * 100}%`,
       );
     }, [])
     .join(", ");
   const trendValues = trend.map((x: any) => Number(x.COUNT || x.count || 0));
   const maxTrend = Math.max(1, ...trendValues);
-  const trendPoints = trendValues
-    .map(
-      (v, i) =>
-        `${trendValues.length === 1 ? 150 : (i / (trendValues.length - 1)) * 300},${112 - (v / maxTrend) * 92}`,
-    )
-    .join(" ");
   const domainItems = (d.domainDistribution || []).map((x: any) => ({
     name: x.DOMAIN_NAME || x.domain_name,
     value: Number(x.COUNT || x.count || 0),
@@ -558,7 +552,11 @@ function Dashboard({ token }: { token: string }) {
             <div className="donut-legend">
               {statusItems.map((x: any, i: number) => (
                 <span key={x.name}>
-                  <i className={`legend-${i % 6}`} />
+                  <i
+                    style={{
+                      background: statusColors[i % statusColors.length],
+                    }}
+                  />
                   {x.name}
                   <b>{x.value}</b>
                 </span>
@@ -623,56 +621,28 @@ function Dashboard({ token }: { token: string }) {
             条
           </span>
         </h3>
-        <div className="trend-chart trend-line-chart">
+        <div className="trend-chart trend-bar-chart">
           {trend.length ? (
-            <>
-              <svg
-                viewBox="0 0 300 120"
-                preserveAspectRatio="none"
-                role="img"
-                aria-label="近30天新增趋势"
-              >
-                <defs>
-                  <linearGradient id="trendFill" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0" stopColor="#087e8b" stopOpacity=".28" />
-                    <stop offset="1" stopColor="#087e8b" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  className="trend-area"
-                  d={`M ${trendPoints} L 300 120 L 0 120 Z`}
-                />
-                <polyline className="trend-line" points={trendPoints} />
-                {trendValues.map((v, i) => {
-                  const cx =
-                    trendValues.length === 1
-                      ? 150
-                      : (i / (trendValues.length - 1)) * 300;
-                  const cy = 112 - (v / maxTrend) * 92;
-                  const day = String(trend[i]?.DAY || trend[i]?.day || "");
-                  return (
-                    <circle
-                      className="trend-point"
-                      key={day + i}
-                      cx={cx}
-                      cy={cy}
-                      r="2.5"
-                    >
-                      <title>
-                        {day}：{v} 条
-                      </title>
-                    </circle>
-                  );
-                })}
-              </svg>
-              <div className="trend-labels">
-                {trend.map((x: any) => (
-                  <span key={x.DAY || x.day}>
-                    {String(x.DAY || x.day || "").slice(5)}
-                  </span>
-                ))}
-              </div>
-            </>
+            <div className="trend-bars" role="img" aria-label="近30天新增趋势">
+              {trend.map((x: any, i: number) => {
+                const v = trendValues[i];
+                const day = String(x.DAY || x.day || "");
+                return (
+                  <div className="trend-bar-col" key={day + i}>
+                    <div className="trend-bar-track">
+                      <div
+                        className="trend-bar-fill"
+                        style={{ height: `${Math.max(2, (v / maxTrend) * 100)}%` }}
+                        title={`${day}：${v} 条`}
+                      >
+                        <span className="trend-bar-value">{v}</span>
+                      </div>
+                    </div>
+                    <span className="trend-bar-label">{day.slice(5)}</span>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <div className="trend-placeholder">
               {d.thisMonthNew || 0} 条新增记录，暂无趋势明细

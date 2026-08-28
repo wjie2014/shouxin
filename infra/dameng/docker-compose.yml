@@ -1,0 +1,31 @@
+services:
+  dameng:
+    image: hanyf/damengdb:v1.2
+    platform: linux/arm64
+    container_name: shouxin-dameng
+    restart: unless-stopped
+    privileged: true
+    environment:
+      SYSDBA_PWD: ${DM_SYSDBA_PWD:?set DM_SYSDBA_PWD in .env}
+      PAGE_SIZE: ${DM_PAGE_SIZE:-16}
+      CASE_SENSITIVE: ${DM_CASE_SENSITIVE:-N}
+      UNICODE_FLAG: ${DM_UNICODE_FLAG:-1}
+      LENGTH_IN_CHAR: ${DM_LENGTH_IN_CHAR:-1}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${DM_PORT:-5236}:5236"
+    volumes:
+      - dameng-data:/dmdata/data
+      - dameng-logs:/home/dmdba/dmdbms/log
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc 'echo select 1\\; | disql SYSDBA/$${SYSDBA_PWD}@localhost:5236 >/dev/null 2>&1'"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+
+volumes:
+  dameng-data:
+    name: shouxin-dameng-data
+  dameng-logs:
+    name: shouxin-dameng-logs

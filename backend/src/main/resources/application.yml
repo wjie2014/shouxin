@@ -1,0 +1,45 @@
+server:
+  port: ${API_PORT:3000}
+  shutdown: graceful
+  compression:
+    enabled: true
+    mime-types: application/json,text/html,text/plain,text/css,application/javascript
+    min-response-size: 1024
+spring:
+  application:
+    name: shouxin-qa-platform-api
+  datasource:
+    driver-class-name: dm.jdbc.driver.DmDriver
+    url: jdbc:dm://${DM_HOST:127.0.0.1}:${DM_PORT:5236}
+    username: ${DM_USER:SHOUXIN_APP}
+    password: ${DM_PASSWORD:}
+    hikari:
+      minimum-idle: ${DM_POOL_MIN:2}
+      maximum-pool-size: ${DM_POOL_MAX:10}
+      connection-timeout: 5000
+      validation-timeout: 3000
+  jackson:
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:50MB}
+      max-request-size: ${MAX_REQUEST_SIZE:55MB}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+logging:
+  pattern:
+    level: "%5p [request:%X{requestId:-n/a}]"
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-production}
+    access-token-minutes: ${JWT_ACCESS_MINUTES:30}
+  storage:
+    path: ${APP_STORAGE_PATH:./data/uploads}

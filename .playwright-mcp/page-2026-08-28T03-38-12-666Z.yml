@@ -1,0 +1,7 @@
+- generic [ref=f2e4]:
+  - generic [ref=f2e5]: QA·Flow
+  - heading "知识问答对管理系统" [level=1] [ref=f2e6]
+  - paragraph [ref=f2e7]: 企业级知识资产治理平台
+  - textbox "用户名" [ref=f2e8]: admin
+  - textbox "密码" [ref=f2e9]: admin123
+  - button "登录系统" [ref=f2e10] [cursor=pointer]

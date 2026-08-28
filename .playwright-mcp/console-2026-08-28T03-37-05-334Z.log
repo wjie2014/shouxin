@@ -1,0 +1,64 @@
+[     120ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:20354
+[     143ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/favicon.ico:0
+[     231ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) @ http://localhost:5173/:0
+[   14889ms] [ERROR] %s must not return anything besides a function, which is used for clean-up.%s useEffect 
+
+It looks like you wrote useEffect(async () => ...) or returned a Promise. Instead, write the async function inside your effect and call it immediately:
+
+useEffect(() => {
+  async function fetchData() {
+    // You can await here
+    const response = await MyAPI.getData(someId);
+    // ...
+  }
+  fetchData();
+}, [someId]); // Or [] if effect doesn't need props or state
+
+Learn more about data fetching with Hooks: https://react.dev/link/hooks-data-fetching @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:9674
+[   14890ms] [ERROR] %s must not return anything besides a function, which is used for clean-up.%s useEffect 
+
+It looks like you wrote useEffect(async () => ...) or returned a Promise. Instead, write the async function inside your effect and call it immediately:
+
+useEffect(() => {
+  async function fetchData() {
+    // You can await here
+    const response = await MyAPI.getData(someId);
+    // ...
+  }
+  fetchData();
+}, [someId]); // Or [] if effect doesn't need props or state
+
+Learn more about data fetching with Hooks: https://react.dev/link/hooks-data-fetching @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:9674
+[   14900ms] TypeError: destroy is not a function
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:18825:13)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:1249:72)
+    at commitHookEffectListUnmount (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:9701:160)
+    at commitHookPassiveUnmountEffects (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:9720:60)
+    at disconnectPassiveEffect (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:11812:13)
+    at doubleInvokeEffectsOnFiber (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:13591:42)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:1249:72)
+    at recursivelyTraverseAndDoubleInvokeEffectsInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:13564:78)
+    at recursivelyTraverseAndDoubleInvokeEffectsInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:13569:17)
+    at recursivelyTraverseAndDoubleInvokeEffectsInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:13569:17)
+[   14892ms] [WARNING] %s
+
+%s
+ An error occurred in the <Pairs> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:7217
+[   14900ms] TypeError: destroy is not a function
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:18825:13)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:1249:72)
+    at commitHookEffectListUnmount (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:9701:160)
+    at commitHookPassiveUnmountEffects (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:9720:60)
+    at commitPassiveUnmountEffectsInsideOfDeletedTree_begin (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:11845:15)
+    at recursivelyTraversePassiveUnmountEffects (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:11717:15)
+    at commitPassiveUnmountOnFiber (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:11750:13)
+    at flushPassiveEffects (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:13398:11)
+    at flushPendingEffects (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:13340:16)
+    at flushSpawnedWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:13314:46)
+[   14892ms] [WARNING] %s
+
+%s
+ An error occurred in the <Pairs> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:7217
+[   55969ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0337b10:20354

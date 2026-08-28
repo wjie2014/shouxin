@@ -1,0 +1,13 @@
+package com.shouxin.qa.admin;
+import org.springframework.jdbc.core.JdbcTemplate;import org.springframework.security.access.prepost.PreAuthorize;import org.springframework.transaction.annotation.Transactional;import org.springframework.web.bind.annotation.*;import java.util.*;
+@RestController @RequestMapping("/api/admin/roles") @PreAuthorize("hasRole('SYS_ADMIN')")
+public class RoleAdminController{
+ private final JdbcTemplate jdbc;public RoleAdminController(JdbcTemplate jdbc){this.jdbc=jdbc;}
+ @GetMapping public List<Map<String,Object>> list(){return jdbc.queryForList("SELECT id,role_code,role_name,description,built_in,enabled FROM sys_role ORDER BY enabled DESC,role_name");}
+ @GetMapping("/{userId}") public List<Map<String,Object>> userRoles(@PathVariable String userId){return jdbc.queryForList("SELECT r.id,r.role_code,r.role_name FROM sys_role r JOIN sys_user_role ur ON ur.role_id=r.id WHERE ur.user_id=?",userId);}
+ @PutMapping("/{userId}") @Transactional public void set(@PathVariable String userId,@RequestBody RoleRequest r){jdbc.update("DELETE FROM sys_user_role WHERE user_id=?",userId);if(r.roleCodes()!=null)for(String code:r.roleCodes())jdbc.update("INSERT INTO sys_user_role(user_id,role_id) SELECT ?,id FROM sys_role WHERE role_code=?",userId,code);}
+ @PostMapping public Map<String,Object> create(@RequestBody RoleDef r){if(r.roleCode()==null||r.roleCode().isBlank()||r.roleName()==null||r.roleName().isBlank())throw new IllegalArgumentException("角色编码和名称不能为空");String id=UUID.randomUUID().toString();jdbc.update("INSERT INTO sys_role(id,role_code,role_name,description,built_in,enabled) VALUES(?,?,?,?,0,1)",id,r.roleCode(),r.roleName(),r.description());return jdbc.queryForMap("SELECT id,role_code,role_name,description,built_in,enabled FROM sys_role WHERE id=?",id);}
+ @PutMapping("/definition/{id}") public void updateRole(@PathVariable String id,@RequestBody RoleDef r){if(jdbc.update("UPDATE sys_role SET role_name=?,description=?,enabled=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND built_in=0",r.roleName(),r.description(),r.enabled()?1:0,id)!=1)throw new NoSuchElementException("自定义角色不存在");}
+ @DeleteMapping("/definition/{id}") public void deleteRole(@PathVariable String id){Integer used=jdbc.queryForObject("SELECT COUNT(*) FROM sys_user_role WHERE role_id=?",Integer.class,id);if(used!=null&&used>0)throw new IllegalArgumentException("该角色已分配给用户，不能删除");if(jdbc.update("DELETE FROM sys_role WHERE id=? AND built_in=0",id)!=1)throw new IllegalArgumentException("内置角色不可删除或角色不存在");}
+ public record RoleRequest(List<String> roleCodes){}public record RoleDef(String roleCode,String roleName,String description,boolean enabled){}
+}

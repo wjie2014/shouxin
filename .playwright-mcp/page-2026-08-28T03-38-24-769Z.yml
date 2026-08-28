@@ -1,0 +1,368 @@
+- generic [ref=f2e11]:
+  - complementary [ref=f2e12]:
+    - generic [ref=f2e13]: QA·Flow
+    - navigation [ref=f2e14]:
+      - generic [ref=f2e15]:
+        - generic [ref=f2e16]: 工作台
+        - button "⌂ 工作台" [ref=f2e17] [cursor=pointer]:
+          - generic [ref=f2e18]: ⌂
+          - text: 工作台
+      - generic [ref=f2e19]:
+        - generic [ref=f2e20]: 问答对管理
+        - button "▤ 问答对列表" [active] [ref=f2e21] [cursor=pointer]:
+          - generic [ref=f2e22]: ▤
+          - text: 问答对列表
+        - button "＋ 新建问答对" [ref=f2e23] [cursor=pointer]:
+          - generic [ref=f2e24]: ＋
+          - text: 新建问答对
+      - generic [ref=f2e25]:
+        - generic [ref=f2e26]: 审核管理
+        - button "✓ 待审核列表" [ref=f2e27] [cursor=pointer]:
+          - generic [ref=f2e28]: ✓
+          - text: 待审核列表
+        - button "↺ 审核历史" [ref=f2e29] [cursor=pointer]:
+          - generic [ref=f2e30]: ↺
+          - text: 审核历史
+      - generic [ref=f2e31]:
+        - generic [ref=f2e32]: 配置管理
+        - button "◫ 字段方案" [ref=f2e33] [cursor=pointer]:
+          - generic [ref=f2e34]: ◫
+          - text: 字段方案
+        - button "▦ 目录体系" [ref=f2e35] [cursor=pointer]:
+          - generic [ref=f2e36]: ▦
+          - text: 目录体系
+        - button "⇢ 审核流程" [ref=f2e37] [cursor=pointer]:
+          - generic [ref=f2e38]: ⇢
+          - text: 审核流程
+      - generic [ref=f2e39]:
+        - generic [ref=f2e40]: 统计分析
+        - button "◔ 运营仪表盘" [ref=f2e41] [cursor=pointer]:
+          - generic [ref=f2e42]: ◔
+          - text: 运营仪表盘
+        - button "⌁ 自定义分析" [ref=f2e43] [cursor=pointer]:
+          - generic [ref=f2e44]: ⌁
+          - text: 自定义分析
+      - generic [ref=f2e45]:
+        - generic [ref=f2e46]: 系统管理
+        - button "♙ 用户管理" [ref=f2e47] [cursor=pointer]:
+          - generic [ref=f2e48]: ♙
+          - text: 用户管理
+        - button "♚ 角色管理" [ref=f2e49] [cursor=pointer]:
+          - generic [ref=f2e50]: ♚
+          - text: 角色管理
+        - button "≡ 操作日志" [ref=f2e51] [cursor=pointer]:
+          - generic [ref=f2e52]: ≡
+          - text: 操作日志
+        - button "⚙ 系统参数" [ref=f2e53] [cursor=pointer]:
+          - generic [ref=f2e54]: ⚙
+          - text: 系统参数
+    - generic [ref=f2e55]:
+      - generic [ref=f2e56]: 系
+      - generic [ref=f2e57]:
+        - strong [ref=f2e58]: 系统管理员
+        - text: SYS_ADMIN
+      - button "退出" [ref=f2e59] [cursor=pointer]
+  - main [ref=f2e60]:
+    - generic [ref=f2e61]:
+      - generic [ref=f2e62]:
+        - text: 知识资产治理
+        - heading "问答对列表" [level=2] [ref=f2e143]
+      - generic [ref=f2e64]: 系统正常
+    - generic [ref=f2e144]:
+      - generic [ref=f2e145]:
+        - textbox "搜索问答编号或问题…" [ref=f2e146]
+        - button "搜索" [ref=f2e147] [cursor=pointer]
+        - generic [ref=f2e148] [cursor=pointer]: 导入模板
+        - link "导出 Excel" [ref=f2e149] [cursor=pointer]:
+          - /url: http://localhost:3000/api/export/second-stage
+        - button "+ 新建问答对" [ref=f2e150] [cursor=pointer]
+      - table [ref=f2e151]:
+        - rowgroup [ref=f2e152]:
+          - row [ref=f2e153] [cursor=pointer]:
+            - columnheader "问答编号" [ref=f2e154]
+            - columnheader "问题" [ref=f2e155]
+            - columnheader "状态" [ref=f2e156]
+            - columnheader "版本" [ref=f2e157]
+            - columnheader "创建人" [ref=f2e158]
+            - columnheader "更新时间" [ref=f2e159]
+        - rowgroup [ref=f2e160]:
+          - row [ref=f2e161] [cursor=pointer]:
+            - cell "QA-2026-0040" [ref=f2e162]
+            - cell "工艺异常波动时的处理原则？" [ref=f2e163]
+            - cell "draft" [ref=f2e164]
+            - cell "V1.0" [ref=f2e165]
+            - cell "系统管理员" [ref=f2e166]
+            - cell "2026-08-28T11:33:32" [ref=f2e167]
+          - row [ref=f2e168] [cursor=pointer]:
+            - cell "QA-2026-0039" [ref=f2e169]
+            - cell "DCS系统死机如何应急处理？" [ref=f2e170]
+            - cell "draft" [ref=f2e171]
+            - cell "V1.0" [ref=f2e172]
+            - cell "系统管理员" [ref=f2e173]
+            - cell "2026-08-28T11:33:32" [ref=f2e174]
+          - row [ref=f2e175] [cursor=pointer]:
+            - cell "QA-2026-0038" [ref=f2e176]
+            - cell "电动机巡检的主要内容是什么？" [ref=f2e177]
+            - cell "draft" [ref=f2e178]
+            - cell "V1.0" [ref=f2e179]
+            - cell "系统管理员" [ref=f2e180]
+            - cell "2026-08-28T11:33:32" [ref=f2e181]
+          - row [ref=f2e182] [cursor=pointer]:
+            - cell "QA-2026-0037" [ref=f2e183]
+            - cell "变压器并列运行的条件是什么？" [ref=f2e184]
+            - cell "draft" [ref=f2e185]
+            - cell "V1.0" [ref=f2e186]
+            - cell "系统管理员" [ref=f2e187]
+            - cell "2026-08-28T11:33:32" [ref=f2e188]
+          - row [ref=f2e189] [cursor=pointer]:
+            - cell "QA-2026-0036" [ref=f2e190]
+            - cell "脱硫系统常见故障及处理方法" [ref=f2e191]
+            - cell "draft" [ref=f2e192]
+            - cell "V1.0" [ref=f2e193]
+            - cell "系统管理员" [ref=f2e194]
+            - cell "2026-08-28T11:33:32" [ref=f2e195]
+          - row [ref=f2e196] [cursor=pointer]:
+            - cell "QA-2026-0035" [ref=f2e197]
+            - cell "锅炉给水处理的主要方法？" [ref=f2e198]
+            - cell "draft" [ref=f2e199]
+            - cell "V1.0" [ref=f2e200]
+            - cell "系统管理员" [ref=f2e201]
+            - cell "2026-08-28T11:33:32" [ref=f2e202]
+          - row [ref=f2e203] [cursor=pointer]:
+            - cell "QA-2026-0034" [ref=f2e204]
+            - cell "汽轮机冲转条件有哪些？" [ref=f2e205]
+            - cell "draft" [ref=f2e206]
+            - cell "V1.0" [ref=f2e207]
+            - cell "系统管理员" [ref=f2e208]
+            - cell "2026-08-28T11:33:32" [ref=f2e209]
+          - row [ref=f2e210] [cursor=pointer]:
+            - cell "QA-2026-0033" [ref=f2e211]
+            - cell "化工产品销售合同的主要条款？" [ref=f2e212]
+            - cell "draft" [ref=f2e213]
+            - cell "V1.0" [ref=f2e214]
+            - cell "系统管理员" [ref=f2e215]
+            - cell "2026-08-28T11:33:32" [ref=f2e216]
+          - row [ref=f2e217] [cursor=pointer]:
+            - cell "QA-2026-0032" [ref=f2e218]
+            - cell "输煤系统皮带跑偏的原因及处理？" [ref=f2e219]
+            - cell "draft" [ref=f2e220]
+            - cell "V1.0" [ref=f2e221]
+            - cell "系统管理员" [ref=f2e222]
+            - cell "2026-08-28T11:33:32" [ref=f2e223]
+          - row [ref=f2e224] [cursor=pointer]:
+            - cell "QA-2026-0031" [ref=f2e225]
+            - cell "合成反应器催化剂活化步骤？" [ref=f2e226]
+            - cell "draft" [ref=f2e227]
+            - cell "V1.0" [ref=f2e228]
+            - cell "系统管理员" [ref=f2e229]
+            - cell "2026-08-28T11:33:32" [ref=f2e230]
+          - row [ref=f2e231] [cursor=pointer]:
+            - cell "QA-2026-0030" [ref=f2e232]
+            - cell "在线色谱仪维护要点有哪些？" [ref=f2e233]
+            - cell "draft" [ref=f2e234]
+            - cell "V1.0" [ref=f2e235]
+            - cell "系统管理员" [ref=f2e236]
+            - cell "2026-08-28T11:33:32" [ref=f2e237]
+          - row [ref=f2e238] [cursor=pointer]:
+            - cell "QA-2026-0029" [ref=f2e239]
+            - cell "继电保护装置的基本要求有哪些？" [ref=f2e240]
+            - cell "draft" [ref=f2e241]
+            - cell "V1.0" [ref=f2e242]
+            - cell "系统管理员" [ref=f2e243]
+            - cell "2026-08-28T11:33:32" [ref=f2e244]
+          - row [ref=f2e245] [cursor=pointer]:
+            - cell "QA-2026-0028" [ref=f2e246]
+            - cell "设备日常维护保养的主要内容？" [ref=f2e247]
+            - cell "draft" [ref=f2e248]
+            - cell "V1.0" [ref=f2e249]
+            - cell "系统管理员" [ref=f2e250]
+            - cell "2026-08-28T11:33:32" [ref=f2e251]
+          - row [ref=f2e252] [cursor=pointer]:
+            - cell "QA-2026-0027" [ref=f2e253]
+            - cell "化工单元操作主要包括哪些类型？" [ref=f2e254]
+            - cell "draft" [ref=f2e255]
+            - cell "V1.0" [ref=f2e256]
+            - cell "系统管理员" [ref=f2e257]
+            - cell "2026-08-28T11:33:32" [ref=f2e258]
+          - row [ref=f2e259] [cursor=pointer]:
+            - cell "QA-2026-0026" [ref=f2e260]
+            - cell "ISO9001质量管理体系的主要原则？" [ref=f2e261]
+            - cell "draft" [ref=f2e262]
+            - cell "V1.0" [ref=f2e263]
+            - cell "系统管理员" [ref=f2e264]
+            - cell "2026-08-28T11:33:32" [ref=f2e265]
+          - row [ref=f2e266] [cursor=pointer]:
+            - cell "QA-2026-0025" [ref=f2e267]
+            - cell "工业控制系统网络安全防护要点？" [ref=f2e268]
+            - cell "draft" [ref=f2e269]
+            - cell "V1.0" [ref=f2e270]
+            - cell "系统管理员" [ref=f2e271]
+            - cell "2026-08-28T11:33:32" [ref=f2e272]
+          - row [ref=f2e273] [cursor=pointer]:
+            - cell "QA-2026-0024" [ref=f2e274]
+            - cell "MES系统与ERP系统的集成方式？" [ref=f2e275]
+            - cell "draft" [ref=f2e276]
+            - cell "V1.0" [ref=f2e277]
+            - cell "系统管理员" [ref=f2e278]
+            - cell "2026-08-28T11:33:32" [ref=f2e279]
+          - row [ref=f2e280] [cursor=pointer]:
+            - cell "QA-2026-0023" [ref=f2e281]
+            - cell "催化剂失活的主要原因有哪些？" [ref=f2e282]
+            - cell "draft" [ref=f2e283]
+            - cell "V1.0" [ref=f2e284]
+            - cell "系统管理员" [ref=f2e285]
+            - cell "2026-08-28T11:33:32" [ref=f2e286]
+          - row [ref=f2e287] [cursor=pointer]:
+            - cell "QA-2026-0022" [ref=f2e288]
+            - cell "煤粉锅炉启动前的检查项目有哪些？" [ref=f2e289]
+            - cell "draft" [ref=f2e290]
+            - cell "V1.0" [ref=f2e291]
+            - cell "系统管理员" [ref=f2e292]
+            - cell "2026-08-28T11:33:32" [ref=f2e293]
+          - row [ref=f2e294] [cursor=pointer]:
+            - cell "QA-2026-0021" [ref=f2e295]
+            - cell "投料试车方案应包含哪些内容？" [ref=f2e296]
+            - cell "draft" [ref=f2e297]
+            - cell "V1.0" [ref=f2e298]
+            - cell "系统管理员" [ref=f2e299]
+            - cell "2026-08-28T11:33:32" [ref=f2e300]
+          - row [ref=f2e301] [cursor=pointer]:
+            - cell "QA-2026-0020" [ref=f2e302]
+            - cell "单机试车应具备哪些条件？" [ref=f2e303]
+            - cell "draft" [ref=f2e304]
+            - cell "V1.0" [ref=f2e305]
+            - cell "系统管理员" [ref=f2e306]
+            - cell "2026-08-28T11:33:32" [ref=f2e307]
+          - row [ref=f2e308] [cursor=pointer]:
+            - cell "QA-2026-0019" [ref=f2e309]
+            - cell "化工企业应急预案体系包括哪些？" [ref=f2e310]
+            - cell "draft" [ref=f2e311]
+            - cell "V1.0" [ref=f2e312]
+            - cell "系统管理员" [ref=f2e313]
+            - cell "2026-08-28T11:33:32" [ref=f2e314]
+          - row [ref=f2e315] [cursor=pointer]:
+            - cell "QA-2026-0018" [ref=f2e316]
+            - cell "VOCs排放超标如何应急处置？" [ref=f2e317]
+            - cell "draft" [ref=f2e318]
+            - cell "V1.0" [ref=f2e319]
+            - cell "系统管理员" [ref=f2e320]
+            - cell "2026-08-28T11:33:32" [ref=f2e321]
+          - row [ref=f2e322] [cursor=pointer]:
+            - cell "QA-2026-0017" [ref=f2e323]
+            - cell "进入受限空间作业的安全要求？" [ref=f2e324]
+            - cell "draft" [ref=f2e325]
+            - cell "V1.0" [ref=f2e326]
+            - cell "系统管理员" [ref=f2e327]
+            - cell "2026-08-28T11:33:32" [ref=f2e328]
+          - row [ref=f2e329] [cursor=pointer]:
+            - cell "QA-2026-0016" [ref=f2e330]
+            - cell "DCS控制器冗余切换的操作步骤？" [ref=f2e331]
+            - cell "draft" [ref=f2e332]
+            - cell "V1.0" [ref=f2e333]
+            - cell "系统管理员" [ref=f2e334]
+            - cell "2026-08-28T11:33:32" [ref=f2e335]
+          - row [ref=f2e336] [cursor=pointer]:
+            - cell "QA-2026-0015" [ref=f2e337]
+            - cell "孔板流量计测量误差的主要原因？" [ref=f2e338]
+            - cell "draft" [ref=f2e339]
+            - cell "V1.0" [ref=f2e340]
+            - cell "系统管理员" [ref=f2e341]
+            - cell "2026-08-28T11:33:32" [ref=f2e342]
+          - row [ref=f2e343] [cursor=pointer]:
+            - cell "QA-2026-0014" [ref=f2e344]
+            - cell "气化炉投料前应具备哪些条件？" [ref=f2e345]
+            - cell "draft" [ref=f2e346]
+            - cell "V1.0" [ref=f2e347]
+            - cell "系统管理员" [ref=f2e348]
+            - cell "2026-08-28T11:33:32" [ref=f2e349]
+          - row [ref=f2e350] [cursor=pointer]:
+            - cell "QA-2026-0013" [ref=f2e351]
+            - cell "test" [ref=f2e352]
+            - cell "draft" [ref=f2e353]
+            - cell "V1.0" [ref=f2e354]
+            - cell "系统管理员" [ref=f2e355]
+            - cell "2026-08-28T11:33:32" [ref=f2e356]
+          - row [ref=f2e357] [cursor=pointer]:
+            - cell "QA-2026-0012" [ref=f2e358]
+            - cell "test2" [ref=f2e359]
+            - cell "draft" [ref=f2e360]
+            - cell "V1.0" [ref=f2e361]
+            - cell "系统管理员" [ref=f2e362]
+            - cell "2026-08-28T11:33:32" [ref=f2e363]
+          - row [ref=f2e364] [cursor=pointer]:
+            - cell "QA-2026-0011" [ref=f2e365]
+            - cell "[API_TEST] 皮带跑偏测试" [ref=f2e366]
+            - cell "draft" [ref=f2e367]
+            - cell "V1.0" [ref=f2e368]
+            - cell "系统管理员" [ref=f2e369]
+            - cell "2026-08-28T11:33:32" [ref=f2e370]
+          - row [ref=f2e371] [cursor=pointer]:
+            - cell "QA-2026-0010" [ref=f2e372]
+            - cell "[E2E]皮带跑偏处理" [ref=f2e373]
+            - cell "draft" [ref=f2e374]
+            - cell "V1.0" [ref=f2e375]
+            - cell "系统管理员" [ref=f2e376]
+            - cell "2026-08-28T11:33:32" [ref=f2e377]
+          - row [ref=f2e378] [cursor=pointer]:
+            - cell "QA-2026-0009" [ref=f2e379]
+            - cell "（未填写问题摘要）" [ref=f2e380]
+            - cell "draft" [ref=f2e381]
+            - cell "V1.0" [ref=f2e382]
+            - cell "系统管理员" [ref=f2e383]
+            - cell "2026-08-28T11:33:32" [ref=f2e384]
+          - row [ref=f2e385] [cursor=pointer]:
+            - cell "QA-2026-0008" [ref=f2e386]
+            - cell "[E2E]锅炉水位异常" [ref=f2e387]
+            - cell "draft" [ref=f2e388]
+            - cell "V1.0" [ref=f2e389]
+            - cell "系统管理员" [ref=f2e390]
+            - cell "2026-08-28T11:33:32" [ref=f2e391]
+          - row [ref=f2e392] [cursor=pointer]:
+            - cell "QA-2026-0007" [ref=f2e393]
+            - cell "[E2E]锅炉水位异常" [ref=f2e394]
+            - cell "draft" [ref=f2e395]
+            - cell "V1.0" [ref=f2e396]
+            - cell "系统管理员" [ref=f2e397]
+            - cell "2026-08-28T11:33:32" [ref=f2e398]
+          - row [ref=f2e399] [cursor=pointer]:
+            - cell "QA-2026-0006" [ref=f2e400]
+            - cell "[API_TEST] 驳回测试" [ref=f2e401]
+            - cell "draft" [ref=f2e402]
+            - cell "V1.0" [ref=f2e403]
+            - cell "系统管理员" [ref=f2e404]
+            - cell "2026-08-28T11:33:32" [ref=f2e405]
+          - row [ref=f2e406] [cursor=pointer]:
+            - cell "QA-2026-0005" [ref=f2e407]
+            - cell "xy测试用的" [ref=f2e408]
+            - cell "draft" [ref=f2e409]
+            - cell "V1.0" [ref=f2e410]
+            - cell "系统管理员" [ref=f2e411]
+            - cell "2026-08-28T11:33:32" [ref=f2e412]
+          - row [ref=f2e413] [cursor=pointer]:
+            - cell "QA-2026-0004" [ref=f2e414]
+            - cell "一氧化碳焚烧炉的作用是什么？" [ref=f2e415]
+            - cell "draft" [ref=f2e416]
+            - cell "V1.0" [ref=f2e417]
+            - cell "系统管理员" [ref=f2e418]
+            - cell "2026-08-28T11:33:06" [ref=f2e419]
+          - row [ref=f2e420] [cursor=pointer]:
+            - cell "QA-2026-0003" [ref=f2e421]
+            - cell "测试问题" [ref=f2e422]
+            - cell "published" [ref=f2e423]
+            - cell "V1.0" [ref=f2e424]
+            - cell "系统管理员" [ref=f2e425]
+            - cell "2026-08-28T10:41:28" [ref=f2e426]
+          - row [ref=f2e427] [cursor=pointer]:
+            - cell "QA-2026-0002" [ref=f2e428]
+            - cell "测试问题" [ref=f2e429]
+            - cell "draft" [ref=f2e430]
+            - cell "V1.0" [ref=f2e431]
+            - cell "系统管理员" [ref=f2e432]
+            - cell "2026-08-28T10:39:58" [ref=f2e433]
+          - row [ref=f2e434] [cursor=pointer]:
+            - cell "QA-2026-0001" [ref=f2e435]
+            - cell "更新问题" [ref=f2e436]
+            - cell "updating" [ref=f2e437]
+            - cell "V2.0" [ref=f2e438]
+            - cell "系统管理员" [ref=f2e439]
+            - cell "2026-08-28T10:25:53" [ref=f2e440]

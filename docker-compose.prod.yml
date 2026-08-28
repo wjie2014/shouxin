@@ -1,0 +1,29 @@
+services:
+  dameng:
+    image: hanyf/damengdb:v1.2
+    container_name: shouxin-dameng
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file: infra/dameng/.env
+    ports: ["5236:5236"]
+    volumes: ["shouxin-dameng-data:/opt/dmdbms/data", "shouxin-dameng-logs:/opt/dmdbms/log"]
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on: [dameng]
+    environment:
+      API_PORT: 3000
+      DM_HOST: dameng
+      DM_PORT: 5236
+      DM_USER: ${DM_USER:-SHOUXIN_APP}
+      DM_PASSWORD: ${DM_PASSWORD:?set DM_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+    ports: ["3000:3000"]
+  web:
+    build: ./apps/web
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["8080:80"]
+volumes:
+  shouxin-dameng-data:
+  shouxin-dameng-logs:

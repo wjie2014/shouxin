@@ -1,0 +1,13 @@
+{
+  "name": "shouxin-qa-platform",
+  "private": true,
+  "packageManager": "pnpm@10.15.1",
+  "scripts": {
+    "backend:dev": "mvn -f backend/pom.xml spring-boot:run",
+    "backend:build": "mvn -f backend/pom.xml clean package",
+    "backend:test": "mvn -f backend/pom.xml test",
+    "web:dev": "pnpm --filter @shouxin/web dev",
+    "web:build": "pnpm --filter @shouxin/web build",
+    "db:migrate": "mvn -f backend/pom.xml -DskipTests package"
+  }
+}

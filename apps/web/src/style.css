@@ -160,6 +160,7 @@ a {
   line-height: 1.3;
   letter-spacing: -0.01em;
   text-wrap: balance;
+  color: #f4f8ff;
 }
 
 .login-aside-mid > p {
@@ -233,13 +234,13 @@ a {
 .login-main {
   display: grid;
   place-items: center;
-  padding: 40px;
+  padding: 40px 24px;
   background: var(--surface);
 }
 
 .login-card {
-  width: 380px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 400px;
 }
 
 .login-card-head {

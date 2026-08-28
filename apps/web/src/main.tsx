@@ -534,126 +534,106 @@ function Dashboard({ token }: { token: string }) {
           </div>
         ))}
       </section>
-      <section className="grid">
-        <div className="panel status-panel">
-          <h3>状态分布</h3>
-          <div className="donut-wrap">
-            <div
-              className="donut"
-              style={{
-                background: `conic-gradient(${statusGradient || "#dce6ee 0 100%"})`,
-              }}
-            >
-              <div>
-                <strong>{d.total}</strong>
-                <small>总量</small>
+      <section className="grid dashboard-grid">
+        <div className="dash-col">
+          <div className="panel status-panel">
+            <h3>状态分布</h3>
+            <div className="donut-wrap">
+              <div
+                className="donut"
+                style={{
+                  background: `conic-gradient(${statusGradient || "#dce6ee 0 100%"})`,
+                }}
+              >
+                <div>
+                  <strong>{d.total}</strong>
+                  <small>总量</small>
+                </div>
+              </div>
+              <div className="donut-legend">
+                {statusItems.map((x: any, i: number) => (
+                  <span key={x.name}>
+                    <i
+                      style={{
+                        background: statusColors[i % statusColors.length],
+                      }}
+                    />
+                    <em>{x.name}</em>
+                    <b>{x.value}</b>
+                    <u>
+                      {statusTotal
+                        ? Math.round((x.value / statusTotal) * 100)
+                        : 0}
+                      %
+                    </u>
+                  </span>
+                ))}
               </div>
             </div>
-            <div className="donut-legend">
-              {statusItems.map((x: any, i: number) => (
-                <span key={x.name}>
-                  <i
-                    style={{
-                      background: statusColors[i % statusColors.length],
-                    }}
-                  />
-                  <em>{x.name}</em>
-                  <b>{x.value}</b>
-                  <u>
-                    {statusTotal
-                      ? Math.round((x.value / statusTotal) * 100)
-                      : 0}
-                    %
-                  </u>
-                </span>
-              ))}
+          </div>
+          <div className="panel trend-panel">
+            <h3 className="trend-heading">
+              近30天新增趋势{" "}
+              <span className="trend-summary">
+                合计 {trendValues.reduce((s, v) => s + v, 0)} 条 · 峰值{" "}
+                {maxTrend} 条
+              </span>
+            </h3>
+            <div className="trend-chart trend-bar-chart">
+              {trend.length ? (
+                <div
+                  className="trend-bars"
+                  role="img"
+                  aria-label="近30天新增趋势"
+                >
+                  {trend.map((x: any, i: number) => {
+                    const v = trendValues[i];
+                    const day = String(x.DAY || x.day || "");
+                    return (
+                      <div className="trend-bar-col" key={day + i}>
+                        <div className="trend-bar-track">
+                          <div
+                            className="trend-bar-fill"
+                            style={{
+                              height: `${Math.max(2, (v / maxTrend) * 100)}%`,
+                            }}
+                            title={`${day}：${v} 条`}
+                          >
+                            <span className="trend-bar-value">{v}</span>
+                          </div>
+                        </div>
+                        <span className="trend-bar-label">{day.slice(5)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="trend-placeholder">
+                  {d.thisMonthNew || 0} 条新增记录，暂无趋势明细
+                </div>
+              )}
             </div>
           </div>
         </div>
-        <div className="panel">
+        <div className="panel domain-panel">
           <h3>
             空间分布 <small className="panel-subtitle">按一级目录</small>
           </h3>
-          {domainItems.map((x: any) => (
-            <div className="bar-row" key={x.name}>
-              <span title={x.name}>{x.name}</span>
-              <div>
-                <i
-                  style={{
-                    width: `${Math.max(4, (x.value / maxDomain) * 100)}%`,
-                  }}
-                />
-              </div>
-              <b>{x.value}</b>
-            </div>
-          ))}
-        </div>
-        {/* Keep the distribution rows available to screen readers as text content. */}
-        {false &&
-          [
-            ["状态分布", d.statusDistribution],
-            ["一级目录分布", d.domainDistribution],
-          ].map(([title, items]: any) => (
-            <div className="panel" key={title}>
-              <h3>{title}</h3>
-              {(items || []).map((x: any) => (
-                <div
-                  className="bar-row"
-                  key={x.STATUS || x.status || x.DOMAIN_NAME || x.domain_name}
-                >
-                  <span>
-                    {statusName[x.STATUS || x.status] ||
-                      x.DOMAIN_NAME ||
-                      x.domain_name}
-                  </span>
-                  <div>
-                    <i
-                      style={{
-                        width: `${Math.min(100, ((x.COUNT || x.count) / Math.max(1, d.total)) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <b>{x.COUNT || x.count}</b>
+          <div className="domain-bars">
+            {domainItems.map((x: any) => (
+              <div className="bar-row" key={x.name}>
+                <span title={x.name}>{x.name}</span>
+                <div>
+                  <i
+                    style={{
+                      width: `${Math.max(4, (x.value / maxDomain) * 100)}%`,
+                    }}
+                  />
                 </div>
-              ))}
-            </div>
-          ))}
-      </section>
-      <section className="panel">
-        <h3 className="trend-heading">
-          近30天新增趋势{" "}
-          <span className="trend-summary">
-            合计 {trendValues.reduce((s, v) => s + v, 0)} 条 · 峰值 {maxTrend}{" "}
-            条
-          </span>
-        </h3>
-        <div className="trend-chart trend-bar-chart">
-          {trend.length ? (
-            <div className="trend-bars" role="img" aria-label="近30天新增趋势">
-              {trend.map((x: any, i: number) => {
-                const v = trendValues[i];
-                const day = String(x.DAY || x.day || "");
-                return (
-                  <div className="trend-bar-col" key={day + i}>
-                    <div className="trend-bar-track">
-                      <div
-                        className="trend-bar-fill"
-                        style={{ height: `${Math.max(2, (v / maxTrend) * 100)}%` }}
-                        title={`${day}：${v} 条`}
-                      >
-                        <span className="trend-bar-value">{v}</span>
-                      </div>
-                    </div>
-                    <span className="trend-bar-label">{day.slice(5)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="trend-placeholder">
-              {d.thisMonthNew || 0} 条新增记录，暂无趋势明细
-            </div>
-          )}
+                <b>{x.value}</b>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </>
@@ -1747,7 +1727,7 @@ function Reviews({ token }: { token: string }) {
       setChecked([]);
       setMsg(
         rs.some((x) => x.status === "rejected")
-          ? "部分任务处理失败，请刷新后重试"
+          ? "部分任务处理失败，请刷新后���试"
           : "批量审核完成",
       );
       load();

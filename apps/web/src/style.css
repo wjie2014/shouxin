@@ -832,6 +832,63 @@ h2 {
   border-bottom: 1px solid var(--divider);
 }
 
+/* 首页：左列(状态分布+趋势) 与 右列(空间分布) 严格等高 */
+.dashboard-grid {
+  align-items: stretch;
+}
+
+.dash-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.dash-col > .panel {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dash-col > .panel > h3 {
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.trend-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.trend-panel .trend-chart {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+}
+
+.trend-panel .trend-bars {
+  flex: 1;
+  height: auto;
+}
+
+.domain-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.domain-bars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.domain-bars .bar-row {
+  margin: 0;
+}
+
 section.panel {
   margin-top: 16px;
 }

@@ -1889,8 +1889,11 @@ function Domains({ token }: { token: string }) {
     [editing, setEditing] = useState<any>(null),
     [editName, setEditName] = useState(""),
     [deleteTarget, setDeleteTarget] = useState<any>(null),
+    [collapsed, setCollapsed] = useState<Record<string, boolean>>({}),
     [page, setPage] = useState(1),
     [pageSize, setPageSize] = useState(10);
+  const toggleCollapse = (id: string) =>
+    setCollapsed((c) => ({ ...c, [id]: !c[id] }));
   const load = () =>
     api("/domains/tree", {}, token)
       .then((x) => setData(Array.isArray(x) ? x : []))
@@ -1966,9 +1969,25 @@ function Domains({ token }: { token: string }) {
   const renderNode = (node: any, depth = 0): any => {
     const childCount = (node.children || []).length;
     const level = node.level_no || node.LEVEL_NO || depth + 1;
+    const nodeId = node.id || node.ID;
+    const hasChildren = childCount > 0;
+    const isCollapsed = collapsed[nodeId];
     return (
-      <div className="tree-node" key={node.id || node.ID}>
+      <div className="tree-node" key={nodeId}>
         <div className={`tree-row tree-row-l${level}`}>
+          {hasChildren ? (
+            <button
+              type="button"
+              className={`tree-toggle${isCollapsed ? " collapsed" : ""}`}
+              onClick={() => toggleCollapse(nodeId)}
+              aria-label={isCollapsed ? "展开" : "折叠"}
+              aria-expanded={!isCollapsed}
+            >
+              ▾
+            </button>
+          ) : (
+            <span className="tree-toggle tree-toggle-empty" aria-hidden="true" />
+          )}
           <span className="tree-badge">L{level}</span>
           <div className="tree-info">
             <b>{node.domainName || node.DOMAIN_NAME}</b>
@@ -1989,7 +2008,7 @@ function Domains({ token }: { token: string }) {
             </button>
           </div>
         </div>
-        {childCount > 0 && (
+        {hasChildren && !isCollapsed && (
           <div className="tree-children">
             {(node.children || []).map((child: any) =>
               renderNode(child, depth + 1),

@@ -139,26 +139,89 @@ function Login({ done }: { done: (t: string, u: any) => void }) {
       .catch((e) => setError(e.message));
   return (
     <div className="login">
-      <div className="login-card">
-        <div className="brand">
-          QA<span>·</span>Flow
+      <div className="login-aside">
+        <div className="login-aside-top">
+          <div className="brand">
+            QA<span>·</span>Flow
+          </div>
         </div>
-        <h1>知识问答对管理系统</h1>
-        <p>企业级知识资产治理平台</p>
-        <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="用户名"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="密码"
-          onKeyDown={(e) => e.key === "Enter" && login()}
-        />
-        {error && <div className="error">{error}</div>}
-        <button onClick={login}>登录系统</button>
+        <div className="login-aside-mid">
+          <h2>知识问答对管理系统</h2>
+          <p>企业级知识资产治理平台，覆盖问答对全生命周期的采集、审核、发布与检索。</p>
+          <ul className="login-features">
+            <li>
+              <span className="lf-icon">▤</span>
+              <div>
+                <strong>结构化知识治理</strong>
+                <small>按业务域分级管理，沉淀可复用的问答资产</small>
+              </div>
+            </li>
+            <li>
+              <span className="lf-icon">✓</span>
+              <div>
+                <strong>多级审核流转</strong>
+                <small>标准化审批链路，保障知识内容质量与合规</small>
+              </div>
+            </li>
+            <li>
+              <span className="lf-icon">⌂</span>
+              <div>
+                <strong>数据驾驶舱</strong>
+                <small>实时统计与趋势分析，量化知识运营成效</small>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div className="login-aside-foot">
+          © 2026 QA·Flow 知识资产治理平台 · 企业版
+        </div>
+      </div>
+
+      <div className="login-main">
+        <div className="login-card">
+          <div className="login-card-head">
+            <h1>欢迎登录</h1>
+            <p>请输入您的账号信息以进入管理控制台</p>
+          </div>
+
+          <label className="login-field">
+            <span>账号</span>
+            <div className="login-input">
+              <span className="li-icon">◔</span>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="请输入用户名"
+                autoComplete="username"
+              />
+            </div>
+          </label>
+
+          <label className="login-field">
+            <span>密码</span>
+            <div className="login-input">
+              <span className="li-icon">⚿</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="请输入密码"
+                autoComplete="current-password"
+                onKeyDown={(e) => e.key === "Enter" && login()}
+              />
+            </div>
+          </label>
+
+          {error && <div className="error">{error}</div>}
+
+          <button className="login-submit" onClick={login}>
+            登录系统
+          </button>
+
+          <div className="login-hint">
+            如遇账号问题，请联系系统管理员开通权限
+          </div>
+        </div>
       </div>
     </div>
   );

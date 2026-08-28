@@ -716,47 +716,50 @@ h2 {
 }
 
 .card {
+  --accent: var(--primary);
   position: relative;
   overflow: hidden;
-  padding: 20px 22px;
+  padding: 20px 22px 22px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  transition: box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
+  transition: box-shadow 0.2s var(--ease), transform 0.2s var(--ease),
+    border-color 0.2s var(--ease);
 }
 
 .card:hover {
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
-}
-
-.card:before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 14px;
-  bottom: 14px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--primary);
-  opacity: 0.85;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 
 .card span {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--muted);
   font-size: 13px;
   font-weight: 500;
 }
 
+.card span::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+
 .card strong {
   display: inline-block;
-  margin-top: 12px;
-  font-size: 32px;
+  margin-top: 14px;
+  font-size: 34px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--ink);
+  line-height: 1;
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -764,14 +767,15 @@ h2 {
   margin-left: 6px;
   color: var(--muted);
   font-size: 13px;
+  font-weight: 500;
 }
 
-.card strong.blue { color: var(--primary); }
-.card strong.green { color: #0a9d6e; }
-.card strong.orange { color: #e07b1a; }
-.card strong.purple { color: #7356b8; }
-.card strong.red { color: #d8474d; }
-.card strong.teal { color: #0b8a94; }
+.card-blue { --accent: var(--primary); }
+.card-green { --accent: #0a9d6e; }
+.card-orange { --accent: #e07b1a; }
+.card-purple { --accent: #7356b8; }
+.card-red { --accent: #d8474d; }
+.card-teal { --accent: #0b8a94; }
 
 /* =========================================================================
    面板
@@ -913,10 +917,10 @@ section.panel {
 
 .bar-row {
   display: grid;
-  grid-template-columns: 140px 1fr 44px;
+  grid-template-columns: 96px 1fr 40px;
   align-items: center;
-  gap: 12px;
-  margin: 14px 0;
+  gap: 14px;
+  margin: 13px 0;
   font-size: 13px;
   color: var(--text);
 }
@@ -925,11 +929,12 @@ section.panel {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--muted);
 }
 
 .bar-row div {
   min-width: 0;
-  height: 8px;
+  height: 10px;
   background: var(--surface-alt);
   border-radius: 999px;
   overflow: hidden;
@@ -940,11 +945,13 @@ section.panel {
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--primary), #63a4ff);
+  transition: width 0.5s var(--ease);
 }
 
 .bar-row b {
   text-align: right;
   color: var(--ink);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 

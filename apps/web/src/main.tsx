@@ -524,13 +524,18 @@ function Dashboard({ token }: { token: string }) {
         `${trendValues.length === 1 ? 150 : (i / (trendValues.length - 1)) * 300},${112 - (v / maxTrend) * 92}`,
     )
     .join(" ");
+  const domainItems = (d.domainDistribution || []).map((x: any) => ({
+    name: x.DOMAIN_NAME || x.domain_name,
+    value: Number(x.COUNT || x.count || 0),
+  }));
+  const maxDomain = Math.max(1, ...domainItems.map((x: any) => x.value));
   return (
     <>
       <section className="cards">
         {cards.map((c) => (
-          <div className="card" key={c[0]}>
+          <div className={`card card-${c[2]}`} key={c[0]}>
             <span>{c[0]}</span>
-            <strong className={c[2]}>{c[1]}</strong>
+            <strong>{c[1]}</strong>
             <small>{c[3]}</small>
           </div>
         ))}
@@ -565,17 +570,17 @@ function Dashboard({ token }: { token: string }) {
           <h3>
             空间分布 <small className="panel-subtitle">按一级目录</small>
           </h3>
-          {(d.domainDistribution || []).map((x: any) => (
-            <div className="bar-row" key={x.DOMAIN_NAME || x.domain_name}>
-              <span>{x.DOMAIN_NAME || x.domain_name}</span>
+          {domainItems.map((x: any) => (
+            <div className="bar-row" key={x.name}>
+              <span title={x.name}>{x.name}</span>
               <div>
                 <i
                   style={{
-                    width: `${Math.min(100, ((x.COUNT || x.count) / Math.max(1, d.total)) * 100)}%`,
+                    width: `${Math.max(4, (x.value / maxDomain) * 100)}%`,
                   }}
                 />
               </div>
-              <b>{x.COUNT || x.count}</b>
+              <b>{x.value}</b>
             </div>
           ))}
         </div>

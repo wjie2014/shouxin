@@ -976,7 +976,7 @@ function Pairs({ token }: { token: string }) {
           <option value="10">10条/页</option>
           <option value="20">20条/页</option>
           <option value="50">50条/页</option>
-          <option value="100">100条/页</option>
+          <option value="100">100��/页</option>
         </select>
       </div>
       {!items.length && <div className="empty">暂无数据</div>}
@@ -1749,7 +1749,7 @@ function Reviews({ token }: { token: string }) {
       <div className="toolbar">
         <button onClick={() => batch("pass")}>批量通过</button>
         <button className="danger" onClick={() => batch("reject")}>
-          批量驳回
+          ���量驳回
         </button>
         {msg && <span className="muted">{msg}</span>}
       </div>
@@ -1963,29 +1963,42 @@ function Domains({ token }: { token: string }) {
       })
       .catch((e) => setMsg(e.message));
   };
-  const renderNode = (node: any, depth = 0): any => (
-    <div
-      className="tree-node"
-      style={{ marginLeft: depth * 22 }}
-      key={node.id || node.ID}
-    >
-      <b>{node.domainName || node.DOMAIN_NAME}</b>
-      <small>
-        第{node.level_no || node.LEVEL_NO || depth + 1}级 ·{" "}
-        {(node.children || []).length} 个子目录
-      </small>
-      <button className="link" onClick={() => edit(node)}>
-        编辑
-      </button>
-      <button
-        className="link danger-text"
-        onClick={() => setDeleteTarget(node)}
-      >
-        删除
-      </button>
-      {(node.children || []).map((child: any) => renderNode(child, depth + 1))}
-    </div>
-  );
+  const renderNode = (node: any, depth = 0): any => {
+    const childCount = (node.children || []).length;
+    const level = node.level_no || node.LEVEL_NO || depth + 1;
+    return (
+      <div className="tree-node" key={node.id || node.ID}>
+        <div className={`tree-row tree-row-l${level}`}>
+          <span className="tree-badge">L{level}</span>
+          <div className="tree-info">
+            <b>{node.domainName || node.DOMAIN_NAME}</b>
+            <small>
+              第{level}级
+              {childCount > 0 ? ` · 含 ${childCount} 个子目录` : " · 末级目录"}
+            </small>
+          </div>
+          <div className="tree-actions">
+            <button className="link" onClick={() => edit(node)}>
+              编辑
+            </button>
+            <button
+              className="link danger-text"
+              onClick={() => setDeleteTarget(node)}
+            >
+              删除
+            </button>
+          </div>
+        </div>
+        {childCount > 0 && (
+          <div className="tree-children">
+            {(node.children || []).map((child: any) =>
+              renderNode(child, depth + 1),
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
   const parentOptions = (nodes: any[]): any[] =>
     nodes.flatMap((x: any) =>
       [
@@ -2003,7 +2016,7 @@ function Domains({ token }: { token: string }) {
       <div className="toolbar">
         <h3>知识目录</h3>
         <button className="primary" onClick={() => setShow(true)}>
-          + ��增目录
+          + 新增目录
         </button>
       </div>
       {msg && <p className="muted">{msg}</p>}

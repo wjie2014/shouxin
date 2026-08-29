@@ -1798,6 +1798,10 @@ tbody tr:last-child td {
   box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.14);
 }
 
+.rich-editor.answer {
+  margin-bottom: 12px;
+}
+
 .content {
   padding: 14px;
   border: 1px solid var(--border);

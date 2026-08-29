@@ -1739,15 +1739,15 @@ function CreatePair({
               placeholder="标准/规程名称"
             />
           </label>
-          <label>
-            附件（单个不超过50MB）
-            <input
-              type="file"
-              multiple
-              onChange={(e) => setFiles(Array.from(e.target.files || []))}
-            />
-          </label>
         </div>
+        <label>
+          附件（单个不超过50MB）
+          <input
+            type="file"
+            multiple
+            onChange={(e) => setFiles(Array.from(e.target.files || []))}
+          />
+        </label>
         <label>
           问题（支持富文本）
           <div

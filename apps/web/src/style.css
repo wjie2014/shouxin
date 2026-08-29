@@ -1298,6 +1298,22 @@ tbody tr:last-child td {
   font-variant-numeric: tabular-nums;
 }
 
+.code-link {
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.code-link:hover {
+  background: var(--primary-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .tag {
   display: inline-flex;
   align-items: center;
@@ -1307,6 +1323,53 @@ tbody tr:last-child td {
   font-weight: 500;
   background: var(--primary-soft);
   color: var(--primary);
+}
+
+.detail-status {
+  align-self: flex-start;
+  margin: 8px 0 18px;
+}
+
+.detail-tab-content {
+  margin-bottom: 24px;
+}
+
+.table-actions {
+  white-space: nowrap;
+}
+
+.pair-list-table tbody tr {
+  cursor: default;
+}
+
+.link-button {
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  background: var(--primary-soft);
+}
+
+.link-button.danger-text {
+  color: var(--danger);
+}
+
+.link-button.danger-text:hover {
+  background: var(--danger-soft);
+}
+
+.link-button:disabled {
+  color: var(--muted);
+  background: transparent;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .empty,
@@ -1457,8 +1520,16 @@ tbody tr:last-child td {
   color: var(--ink);
 }
 
-.confirm-card > h3 {
-  margin: 0 0 4px;
+.confirm-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.confirm-heading h3 {
+  margin: 0;
   font-size: 19px;
   font-weight: 700;
   color: var(--ink);
@@ -1628,13 +1699,14 @@ tbody tr:last-child td {
 }
 
 .confirm-card .confirm-icon {
-  width: 52px;
-  height: 52px;
-  margin: 0 auto 16px;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  margin: 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 26px;
+  font-size: 17px;
   font-weight: 800;
   background: var(--primary-soft);
   color: var(--primary);

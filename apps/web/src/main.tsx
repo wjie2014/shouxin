@@ -59,12 +59,23 @@ async function api(path: string, opt: RequestInit = {}, token = "") {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
   const r = await fetch(API + path, { ...opt, headers });
-  if (!r.ok)
+  const responseText = await r.text();
+  let payload: any = null;
+  if (responseText.trim()) {
+    try {
+      payload = JSON.parse(responseText);
+    } catch {
+      payload = responseText;
+    }
+  }
+  if (!r.ok) {
     throw Error(
-      (await r.json().catch(() => ({ message: r.statusText }))).message ||
+      (payload && typeof payload === "object" && payload.message) ||
+        r.statusText ||
         "请求失败",
     );
-  return r.status === 204 ? null : r.json();
+  }
+  return payload;
 }
 function ConfirmDialog({
   title = "请确认",
@@ -77,10 +88,12 @@ function ConfirmDialog({
   return (
     <div className="modal">
       <div className="modal-card confirm-card">
-        <div className={`confirm-icon ${danger ? "danger-icon" : ""}`}>
-          {danger ? "!" : "?"}
+        <div className="confirm-heading">
+          <div className={`confirm-icon ${danger ? "danger-icon" : ""}`}>
+            {danger ? "!" : "?"}
+          </div>
+          <h3>{title}</h3>
         </div>
-        <h3>{title}</h3>
         <p>{message}</p>
         <div className="modal-actions">
           <button
@@ -650,6 +663,7 @@ function Pairs({ token }: { token: string }) {
     [to, setTo] = useState(""),
     [domains, setDomains] = useState<any[]>([]),
     [selected, setSelected] = useState<any>(),
+    [editingItem, setEditingItem] = useState<any>(),
     [checked, setChecked] = useState<string[]>([]),
     [page, setPage] = useState(1),
     [pageSize, setPageSize] = useState(10),
@@ -658,6 +672,7 @@ function Pairs({ token }: { token: string }) {
     [importType, setImportType] = useState<"first" | "second">("first"),
     [message, setMessage] = useState(""),
     [deleteConfirm, setDeleteConfirm] = useState(false),
+    [singleDelete, setSingleDelete] = useState<any>(null),
     [importPreview, setImportPreview] = useState<any>(null);
   useEffect(() => {
     api("/domains/tree", {}, token)
@@ -684,6 +699,8 @@ function Pairs({ token }: { token: string }) {
     load();
   }, [token, page, pageSize, status, sort, l1, l2, l3, from, to]);
   const items = Array.isArray(data?.items) ? data.items : [];
+  const total = Number(data?.total ?? items.length);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const reset = () => {
     setKeyword("");
     setStatus("");
@@ -698,6 +715,14 @@ function Pairs({ token }: { token: string }) {
     setChecked((c) =>
       c.includes(id) ? c.filter((x) => x !== id) : [...c, id],
     );
+  const openDetail = (item: any) =>
+    api("/qa-pairs/" + (item.id || item.ID), {}, token)
+      .then(setSelected)
+      .catch((e: any) => setMessage(e.message || "详情加载失败"));
+  const openEdit = (item: any) =>
+    api("/qa-pairs/" + (item.id || item.ID), {}, token)
+      .then(setEditingItem)
+      .catch((e: any) => setMessage(e.message || "编辑数据加载失败"));
   const batchSubmit = () => {
     if (!checked.length) {
       setMessage("请先选择数据");
@@ -729,6 +754,20 @@ function Pairs({ token }: { token: string }) {
       setChecked([]);
       load();
     });
+  };
+  const confirmSingleDelete = () => {
+    if (!singleDelete) return;
+    const id = singleDelete.id || singleDelete.ID;
+    api(`/qa-pairs/${id}`, { method: "DELETE" }, token)
+      .then(() => {
+        setSingleDelete(null);
+        setSelected((current: any) =>
+          current && (current.id || current.ID) === id ? undefined : current,
+        );
+        setMessage("问答对已删除");
+        load();
+      })
+      .catch((e: any) => setMessage(e.message || "删除失败"));
   };
   const confirmImport = () => {
     const pre = importPreview;
@@ -898,13 +937,14 @@ function Pairs({ token }: { token: string }) {
           + 新建问答对
         </button>
       </div>
-      <table>
+      <table className="pair-list-table">
         <thead>
           <tr>
             <th>
               <input
                 type="checkbox"
                 checked={checked.length === items.length && items.length > 0}
+                onClick={(e) => e.stopPropagation()}
                 onChange={(e) =>
                   setChecked(
                     e.target.checked ? items.map((x: any) => x.id || x.ID) : [],
@@ -918,26 +958,25 @@ function Pairs({ token }: { token: string }) {
             <th>版本</th>
             <th>创建人</th>
             <th>更新时间</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
           {items.map((x: any) => (
-            <tr
-              key={x.id || x.ID}
-              onClick={() =>
-                api("/qa-pairs/" + (x.id || x.ID), {}, token).then(setSelected)
-              }
-            >
+            <tr key={x.id || x.ID}>
               <td className="code">
                 <input
                   type="checkbox"
                   checked={checked.includes(x.id || x.ID)}
+                  onClick={(e) => e.stopPropagation()}
                   onChange={(e) => {
                     e.stopPropagation();
                     toggle(x.id || x.ID);
                   }}
                 />{" "}
-                {x.qa_code || x.QA_CODE}
+                <button className="code-link" onClick={() => openDetail(x)}>
+                  {x.qa_code || x.QA_CODE}
+                </button>
               </td>
               <td>{x.question_text || x.QUESTION_TEXT}</td>
               <td>
@@ -948,20 +987,55 @@ function Pairs({ token }: { token: string }) {
               <td>{x.version_no || x.VERSION_NO}</td>
               <td>{x.real_name || x.REAL_NAME}</td>
               <td>{dateTime(x.updated_at || x.UPDATED_AT)}</td>
+              <td className="table-actions" onClick={(e) => e.stopPropagation()}>
+                <button
+                  className="link-button"
+                  onClick={() => openDetail(x)}
+                >
+                  详情
+                </button>
+                <button
+                  className="link-button"
+                  disabled={![
+                    "draft",
+                    "updating",
+                    "rejected_l1",
+                    "rejected_l2",
+                    "rejected_l3",
+                    "published",
+                    "retired",
+                  ].includes(x.status || x.STATUS)}
+                  title={
+                    String(x.status || x.STATUS).startsWith("pending_review_")
+                      ? "审核中的问答对不可编辑"
+                      : "编辑问答对"
+                  }
+                  onClick={() => openEdit(x)}
+                >
+                  编辑
+                </button>
+                <button
+                  className="link-button danger-text"
+                  onClick={() => setSingleDelete(x)}
+                >
+                  删除
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
       <div className="pagination">
+        <span>共 {total} 条</span>
         <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
           上一页
         </button>
         <span>
           第 {page} 页 / 共{" "}
-          {Math.max(1, Math.ceil((data.total || items.length) / pageSize))} 页
+          {totalPages} 页
         </span>
         <button
-          disabled={page >= Math.ceil((data.total || items.length) / pageSize)}
+          disabled={page >= totalPages}
           onClick={() => setPage(page + 1)}
         >
           下一页
@@ -976,7 +1050,7 @@ function Pairs({ token }: { token: string }) {
           <option value="10">10条/页</option>
           <option value="20">20条/页</option>
           <option value="50">50条/页</option>
-          <option value="100">100��/页</option>
+          <option value="100">100条/页</option>
         </select>
       </div>
       {!items.length && <div className="empty">暂无数据</div>}
@@ -996,6 +1070,16 @@ function Pairs({ token }: { token: string }) {
           onCancel={() => setDeleteConfirm(false)}
         />
       )}
+      {singleDelete && (
+        <ConfirmDialog
+          title="删除问答对"
+          message={`确认删除问答对“${singleDelete.qa_code || singleDelete.QA_CODE || "未命名"}”？删除后将无法在列表中查看。`}
+          confirmText="确认删除"
+          danger
+          onConfirm={confirmSingleDelete}
+          onCancel={() => setSingleDelete(null)}
+        />
+      )}
       {importPreview && (
         <ConfirmDialog
           title="导入预览完成"
@@ -1010,8 +1094,28 @@ function Pairs({ token }: { token: string }) {
           item={selected}
           token={token}
           close={() => setSelected(null)}
+          changed={() => {
+            setSelected(null);
+            setMessage("操作成功，列表已刷新");
+            load();
+          }}
         />
       )}{" "}
+      {editingItem && (
+        <EditPair
+          item={editingItem}
+          token={token}
+          published={
+            editingItem.status === "published" || editingItem.status === "retired"
+          }
+          close={() => setEditingItem(null)}
+          saved={() => {
+            setEditingItem(null);
+            setMessage("修改已保存");
+            load();
+          }}
+        />
+      )}
       {showCreate && (
         <CreatePair
           token={token}
@@ -1030,10 +1134,12 @@ function PairDetail({
   item,
   token,
   close,
+  changed,
 }: {
   item: any;
   token: string;
   close: () => void;
+  changed: () => void;
 }) {
   const [tab, setTab] = useState("basic");
   const [history, setHistory] = useState<any[]>([]);
@@ -1058,22 +1164,13 @@ function PairDetail({
   }, [item.id, token]);
   return (
     <>
-      {editing && (
-        <EditPair
-          item={item}
-          token={token}
-          close={() => setEditing(false)}
-          saved={close}
-          published={item.status === "published" || item.status === "retired"}
-        />
-      )}
       <div className="modal">
         <div className="modal-card wide">
           <button className="close" onClick={close}>
             ×
           </button>
           <h3>{item.qa_code}</h3>
-          <span className="tag">{statusLabel[item.status] || item.status}</span>
+          <span className="tag detail-status">{statusLabel[item.status] || item.status}</span>
           <div className="tabs">
             {[
               ["basic", "基本信息"],
@@ -1091,6 +1188,7 @@ function PairDetail({
               </button>
             ))}
           </div>
+          <div className="detail-tab-content">
           {tab === "basic" && (
             <div className="detail-grid">
               <p>
@@ -1274,6 +1372,7 @@ function PairDetail({
               onPageSize={setDetailPageSize}
             />
           )}
+          </div>
           <div className="modal-actions">
             {[
               "draft",
@@ -1298,7 +1397,7 @@ function PairDetail({
                     `/qa-pairs/${item.id}/submit`,
                     { method: "POST" },
                     token,
-                  ).then(close)
+                  ).then(changed)
                 }
               >
                 提交审核
@@ -1318,6 +1417,15 @@ function PairDetail({
           </div>
         </div>
       </div>
+      {editing && (
+        <EditPair
+          item={item}
+          token={token}
+          close={() => setEditing(false)}
+          saved={changed}
+          published={item.status === "published" || item.status === "retired"}
+        />
+      )}
       {retiring && (
         <div className="modal">
           <div className="modal-card">
@@ -1346,7 +1454,7 @@ function PairDetail({
                       body: JSON.stringify({ reason: retireReason }),
                     },
                     token,
-                  ).then(close)
+                  ).then(changed)
                 }
               >
                 确认退役
@@ -1376,8 +1484,9 @@ function EditPair({
     [a, setA] = useState(item.answer_html || ""),
     [doc, setDoc] = useState(item.reference_doc || ""),
     [reason, setReason] = useState(""),
-    [error, setError] = useState("");
-  const save = async () => {
+    [error, setError] = useState(""),
+    [saving, setSaving] = useState(false);
+  const save = async (submit = false) => {
     if (
       !q.replace(/<[^>]+>/g, "").trim() ||
       !a.replace(/<[^>]+>/g, "").trim()
@@ -1386,6 +1495,8 @@ function EditPair({
       return;
     }
     try {
+      setSaving(true);
+      setError("");
       await api(
         `/qa-pairs/${item.id}${published ? "/update" : ""}`,
         {
@@ -1410,10 +1521,15 @@ function EditPair({
         },
         token,
       );
+      if (submit) {
+        await api(`/qa-pairs/${item.id}/submit`, { method: "POST" }, token);
+      }
       close();
       saved();
     } catch (e: any) {
       setError(e.message || "保存失败");
+    } finally {
+      setSaving(false);
     }
   };
   return (
@@ -1469,8 +1585,15 @@ function EditPair({
         </label>
         {error && <div className="error">{error}</div>}
         <div className="modal-actions">
-          <button className="primary" onClick={save}>
+          <button disabled={saving} onClick={() => save(false)}>
             保存修改
+          </button>
+          <button
+            className="primary"
+            disabled={saving}
+            onClick={() => save(true)}
+          >
+            保存并提交审核
           </button>
           <button onClick={close}>取消</button>
         </div>

@@ -60,7 +60,13 @@ public class ReviewController {
         if ("reject".equals(result) && (request.opinion() == null || request.opinion().isBlank())) throw new IllegalArgumentException("驳回时必须填写审核意见");
         String versionId = String.valueOf(pair.get("current_version_id"));
         jdbc.update("INSERT INTO qa_review_record(id, version_id, level_no, reviewer_id, result, opinion, suggestion) VALUES (?, ?, ?, ?, ?, ?, ?)", UUID.randomUUID().toString(), versionId, level, reviewer.id(), result, request.opinion(), request.suggestion());
-        jdbc.update("UPDATE qa_review_task SET task_status=?, completed_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND reviewer_id=? AND task_status='pending'", result, versionId, level, reviewer.id());
+        if (privileged && "pass".equals(result)) {
+            // 管理员审批代表本级管理性确认，关闭本级所有待办，避免错误配置的
+            // 审核人（例如没有对应审核角色的用户）永久阻塞流程。
+            jdbc.update("UPDATE qa_review_task SET task_status='pass', completed_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND task_status='pending'", versionId, level);
+        } else {
+            jdbc.update("UPDATE qa_review_task SET task_status=?, completed_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND reviewer_id=? AND task_status='pending'", result, versionId, level, reviewer.id());
+        }
         if ("reject".equals(result)) {
             jdbc.update("UPDATE qa_review_task SET task_status='cancelled', completed_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND task_status='pending'", versionId, level);
         }

@@ -1675,77 +1675,79 @@ function CreatePair({
           ×
         </button>
         <h3>新建问答对</h3>
-        <label>
-          一级目录
-          <select
-            value={l1}
-            onChange={(e) => {
-              setL1(e.target.value);
-              const d = domains.find(
-                (x: any) => (x.id || x.ID) === e.target.value,
-              );
-              const child = d?.children?.[0];
-              setL2(child?.id || "");
-              setL3(child?.children?.[0]?.id || "");
-            }}
-          >
-            {domains.map((d: any) => (
-              <option key={d.id || d.ID} value={d.id || d.ID}>
-                {d.domainName || d.DOMAIN_NAME}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          二级目录
-          <select
-            value={l2}
-            onChange={(e) => {
-              setL2(e.target.value);
-              const d = (current?.children || []).find(
-                (x: any) => (x.id || x.ID) === e.target.value,
-              );
-              setL3(d?.children?.[0]?.id || "");
-            }}
-          >
-            {(current?.children || []).map((d: any) => (
-              <option key={d.id || d.ID} value={d.id || d.ID}>
-                {d.domainName || d.DOMAIN_NAME}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          三级目录
-          <select value={l3} onChange={(e) => setL3(e.target.value)}>
-            <option value="">请选择三级目录（可选）</option>
-            {(second?.children || []).map((d: any) => (
-              <option key={d.id || d.ID} value={d.id || d.ID}>
-                {d.domainName || d.DOMAIN_NAME}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          编写人
-          <input value="当前登录用户" disabled />
-        </label>
-        <label>
-          依据文档
-          <input
-            value={referenceDoc}
-            onChange={(e) => setReferenceDoc(e.target.value)}
-            placeholder="标准/规程名称"
-          />
-        </label>
-        <label>
-          附件（单个不超过50MB）
-          <input
-            type="file"
-            multiple
-            onChange={(e) => setFiles(Array.from(e.target.files || []))}
-          />
-        </label>
+        <div className="pair-form-grid">
+          <label>
+            一级目录
+            <select
+              value={l1}
+              onChange={(e) => {
+                setL1(e.target.value);
+                const d = domains.find(
+                  (x: any) => (x.id || x.ID) === e.target.value,
+                );
+                const child = d?.children?.[0];
+                setL2(child?.id || "");
+                setL3(child?.children?.[0]?.id || "");
+              }}
+            >
+              {domains.map((d: any) => (
+                <option key={d.id || d.ID} value={d.id || d.ID}>
+                  {d.domainName || d.DOMAIN_NAME}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            二级目录
+            <select
+              value={l2}
+              onChange={(e) => {
+                setL2(e.target.value);
+                const d = (current?.children || []).find(
+                  (x: any) => (x.id || x.ID) === e.target.value,
+                );
+                setL3(d?.children?.[0]?.id || "");
+              }}
+            >
+              {(current?.children || []).map((d: any) => (
+                <option key={d.id || d.ID} value={d.id || d.ID}>
+                  {d.domainName || d.DOMAIN_NAME}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            三级目录
+            <select value={l3} onChange={(e) => setL3(e.target.value)}>
+              <option value="">请选择三级目录（可选）</option>
+              {(second?.children || []).map((d: any) => (
+                <option key={d.id || d.ID} value={d.id || d.ID}>
+                  {d.domainName || d.DOMAIN_NAME}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            编写人
+            <input value="当前登录用户" disabled />
+          </label>
+          <label>
+            依据文档
+            <input
+              value={referenceDoc}
+              onChange={(e) => setReferenceDoc(e.target.value)}
+              placeholder="标准/规程名称"
+            />
+          </label>
+          <label>
+            附件（单个不超过50MB）
+            <input
+              type="file"
+              multiple
+              onChange={(e) => setFiles(Array.from(e.target.files || []))}
+            />
+          </label>
+        </div>
         <label>
           问题（支持富文本）
           <div
@@ -2345,7 +2347,7 @@ function Admin({ token, initialTab }: { token: string; initialTab?: string }) {
           token,
         );
       } else if (tab === "params") {
-        if (!form.key?.trim()) throw Error("参数名不能为空");
+        if (!form.key?.trim()) throw Error("参数名不能为���");
         await api(
           editing._new
             ? "/admin/config"

@@ -1570,6 +1570,31 @@ tbody tr:last-child td {
   margin-top: 6px;
 }
 
+/* 紧凑表单网格 */
+.pair-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin-top: 8px;
+}
+
+.pair-form-grid > label {
+  margin-top: 0;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .pair-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .pair-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 文件选择框 */
 .modal-card input[type="file"] {
   padding: 8px 12px;

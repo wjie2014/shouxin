@@ -1,6 +1,6 @@
 package com.shouxin.qa.admin;
 import org.springframework.jdbc.core.JdbcTemplate;import org.springframework.security.access.prepost.PreAuthorize;import org.springframework.transaction.annotation.Transactional;import org.springframework.web.bind.annotation.*;import java.util.*;
-@RestController @RequestMapping("/api/admin/config") @PreAuthorize("hasRole('SYS_ADMIN')")
+@RestController @RequestMapping("/api/admin/config") @PreAuthorize("hasAuthority('system:params')")
 public class SystemConfigController{
  private final JdbcTemplate jdbc;public SystemConfigController(JdbcTemplate jdbc){this.jdbc=jdbc;}
  @GetMapping public List<Map<String,Object>> list(){return jdbc.queryForList("SELECT config_key,config_value,config_type,description,updated_at FROM sys_config ORDER BY config_key");}

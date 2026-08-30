@@ -30,8 +30,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Roles are loaded from DM8 on every request. The JWT roles claim is
                 // informational only, so disabling a user/role takes effect immediately.
                 AuthUser current = users.findByUsername(claims.get("username", String.class));
+                Integer tokenAuthVersion = claims.get("authVersion", Integer.class);
+                if (tokenAuthVersion == null || tokenAuthVersion != current.authVersion()) {
+                    throw new IllegalArgumentException("登录凭证已失效");
+                }
                 List<String> roles = current.roles();
-                var authorities = roles == null ? List.<SimpleGrantedAuthority>of() : roles.stream().map(r -> new SimpleGrantedAuthority("ROLE_" + r)).toList();
+                var authorities = new java.util.ArrayList<SimpleGrantedAuthority>();
+                if (roles != null) roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));
+                users.permissions(current.id()).forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
                 SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(current.username(), null, authorities));
             } catch (RuntimeException ignored) {
                 // Invalid/expired tokens are treated as anonymous; Spring Security returns 401.

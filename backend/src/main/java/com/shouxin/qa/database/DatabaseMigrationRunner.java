@@ -6,6 +6,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.core.annotation.Order;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
@@ -19,6 +20,7 @@ import java.util.regex.Pattern;
  * fail fast instead of silently altering an existing database.
  */
 @Component
+@Order(0)
 public class DatabaseMigrationRunner implements ApplicationRunner {
     private static final Pattern STATEMENT_SEPARATOR = Pattern.compile(";\\s*(?:\\r?\\n|$)");
     private final JdbcTemplate jdbcTemplate;

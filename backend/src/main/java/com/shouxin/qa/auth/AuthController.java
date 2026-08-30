@@ -32,7 +32,7 @@ public class AuthController {
         users.updateLastLogin(user.id());
         logs.record(user.id(), "LOGIN", "用户登录", "SYSTEM", null);
         return Map.of("accessToken", jwt.create(user), "tokenType", "Bearer", "expiresIn", 1800,
-                "user", Map.of("id", user.id(), "username", user.username(), "realName", user.realName(), "roles", user.roles(), "mustChangePassword", user.mustChangePassword()));
+                "user", Map.of("id", user.id(), "username", user.username(), "realName", user.realName(), "roles", user.roles(), "permissions",users.permissions(user.id()), "mustChangePassword", user.mustChangePassword()));
     }
 
     @PostMapping("/change-password")
@@ -49,7 +49,14 @@ public class AuthController {
     public Map<String, Object> me(Authentication authentication) {
         AuthUser user = users.findByUsername(authentication.getName());
         return Map.of("id", user.id(), "username", user.username(), "realName", user.realName(),
-                "roles", user.roles(), "mustChangePassword", user.mustChangePassword());
+                "roles", user.roles(), "permissions",users.permissions(user.id()), "mustChangePassword", user.mustChangePassword());
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(Authentication authentication) {
+        AuthUser user = users.findByUsername(authentication.getName());
+        logs.record(user.id(), "LOGOUT", "用户退出登录", "SYSTEM", null);
     }
 
     public record LoginRequest(@NotBlank String username, @NotBlank String password) {}

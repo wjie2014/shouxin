@@ -1,1 +1,14 @@
+# Secrets and local configuration
+.env
 infra/dameng/.env
+
+# Build products and dependencies
+**/node_modules/
+**/dist/
+**/target/
+
+# Runtime data and local diagnostics
+backend/data/
+.playwright-mcp/
+*.log
+.DS_Store

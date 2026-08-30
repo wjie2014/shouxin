@@ -1,16 +1,44 @@
 services:
   dameng:
-    image: hanyf/damengdb:v1.2
+    image: ${DM_IMAGE:-hanyf/damengdb:v1.2}
     container_name: shouxin-dameng
-    platform: linux/arm64
+    platform: ${DM_PLATFORM:-linux/arm64}
     restart: unless-stopped
-    env_file: infra/dameng/.env
-    ports: ["5236:5236"]
-    volumes: ["shouxin-dameng-data:/opt/dmdbms/data", "shouxin-dameng-logs:/opt/dmdbms/log"]
+    environment:
+      SYSDBA_PWD: ${DM_SYSDBA_PWD:?set DM_SYSDBA_PWD}
+      PAGE_SIZE: ${DM_PAGE_SIZE:-16}
+      CASE_SENSITIVE: ${DM_CASE_SENSITIVE:-N}
+      UNICODE_FLAG: ${DM_UNICODE_FLAG:-1}
+      LENGTH_IN_CHAR: ${DM_LENGTH_IN_CHAR:-1}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports: ["${DM_BIND_HOST:-127.0.0.1}:5236:5236"]
+    volumes: ["shouxin-dameng-data:/dmdata/data", "shouxin-dameng-logs:/home/dmdba/dmdbms/log"]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc 'echo select 1\\; | disql SYSDBA/$${SYSDBA_PWD}@localhost:5236 >/dev/null 2>&1'"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+  db-init:
+    image: ${DM_IMAGE:-hanyf/damengdb:v1.2}
+    platform: ${DM_PLATFORM:-linux/arm64}
+    depends_on:
+      dameng:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      DM_SYSDBA_PWD: ${DM_SYSDBA_PWD:?set DM_SYSDBA_PWD}
+      DM_USER: ${DM_USER:-SHOUXIN_APP}
+      DM_PASSWORD: ${DM_PASSWORD:?set DM_PASSWORD}
+    volumes:
+      - ./scripts/init-db.sh:/opt/shouxin/init-db.sh:ro
+    entrypoint: ["/bin/bash", "/opt/shouxin/init-db.sh"]
   api:
     build: ./backend
     restart: unless-stopped
-    depends_on: [dameng]
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
     environment:
       API_PORT: 3000
       DM_HOST: dameng
@@ -18,12 +46,28 @@ services:
       DM_USER: ${DM_USER:-SHOUXIN_APP}
       DM_PASSWORD: ${DM_PASSWORD:?set DM_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
-    ports: ["3000:3000"]
+      APP_STORAGE_PATH: /app/data/uploads
+    ports: ["${API_BIND_HOST:-127.0.0.1}:3000:3000"]
+    volumes: ["shouxin-uploads:/app/data/uploads"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
   web:
     build: ./apps/web
     restart: unless-stopped
-    depends_on: [api]
-    ports: ["8080:80"]
+    depends_on:
+      api:
+        condition: service_healthy
+    ports: ["${WEB_BIND_HOST:-0.0.0.0}:8080:80"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 volumes:
   shouxin-dameng-data:
   shouxin-dameng-logs:
+  shouxin-uploads:

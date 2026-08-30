@@ -27,7 +27,7 @@ public class JwtTokenService {
     public String create(AuthUser user) {
         Instant now = Instant.now();
         return Jwts.builder().subject(user.id()).claim("username", user.username()).claim("realName", user.realName())
-                .claim("roles", user.roles()).issuedAt(Date.from(now)).expiration(Date.from(now.plusSeconds(accessTokenMinutes * 60)))
+                .claim("roles", user.roles()).claim("authVersion", user.authVersion()).issuedAt(Date.from(now)).expiration(Date.from(now.plusSeconds(accessTokenMinutes * 60)))
                 .signWith(key).compact();
     }
 

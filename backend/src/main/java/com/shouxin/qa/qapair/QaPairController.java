@@ -3,6 +3,7 @@ package com.shouxin.qa.qapair;
 import com.shouxin.qa.auth.AuthUser;
 import com.shouxin.qa.auth.AuthUserService;
 import com.shouxin.qa.audit.OperationLogService;
+import com.shouxin.qa.field.FieldSchemeService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,20 +23,23 @@ public class QaPairController {
     private final OperationLogService logs;
     private final com.shouxin.qa.review.ReviewWorkflow workflow;
     private final PairAccess access;
+    private final FieldSchemeService fieldSchemes;
 
-    public QaPairController(JdbcTemplate jdbc, AuthUserService users, OperationLogService logs, com.shouxin.qa.review.ReviewWorkflow workflow, PairAccess access) { this.jdbc = jdbc; this.users = users; this.logs = logs; this.workflow = workflow; this.access = access; }
+    public QaPairController(JdbcTemplate jdbc, AuthUserService users, OperationLogService logs, com.shouxin.qa.review.ReviewWorkflow workflow, PairAccess access, FieldSchemeService fieldSchemes) { this.jdbc = jdbc; this.users = users; this.logs = logs; this.workflow = workflow; this.access = access; this.fieldSchemes = fieldSchemes; }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('QA_SUBMITTER','QA_ADMIN','SYS_ADMIN')")
     @Transactional
     public Map<String, Object> create(Authentication authentication, @Valid @RequestBody CreateQaRequest request) {
         AuthUser user = users.findByUsername(authentication.getName());
+        validateRichContent(request.questionHtml(), request.answerHtml());
         validateDomain(request.domainL1Id(), request.domainL2Id(), request.domainL3Id());
+        FieldSchemeService.Resolved fields=fieldSchemes.resolve(request.fieldSchemeId(),request.extensionData(),core(request.questionHtml(),request.answerHtml(),request.referenceDoc(),user.id()),false);
         String pairId = UUID.randomUUID().toString(), versionId = UUID.randomUUID().toString();
         jdbc.update("INSERT INTO qa_pair(id, qa_code, current_version_id, domain_l1_id, domain_l2_id, domain_l3_id, author_id, unit_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT unit_id FROM sys_user WHERE id = ?), 'draft')",
                 pairId, nextQaCode(), versionId, request.domainL1Id(), request.domainL2Id(), request.domainL3Id(), user.id(), user.id());
-        jdbc.update("INSERT INTO qa_pair_version(id, qa_pair_id, version_no, question_html, question_text, answer_html, answer_text, reference_doc, extension_data, version_status, created_by) VALUES (?, ?, 'V1.0', ?, ?, ?, ?, ?, ?, 'draft', ?)",
-                versionId, pairId, request.questionHtml(), stripHtml(request.questionHtml()), request.answerHtml(), stripHtml(request.answerHtml()), request.referenceDoc(), request.extensionData(), user.id());
+        jdbc.update("INSERT INTO qa_pair_version(id, qa_pair_id, version_no, question_html, question_text, answer_html, answer_text, reference_doc, extension_data,field_scheme_id,field_schema_snapshot, version_status, created_by) VALUES (?, ?, 'V1.0', ?, ?, ?, ?, ?, ?,?,?, 'draft', ?)",
+                versionId, pairId, request.questionHtml(), stripHtml(request.questionHtml()), request.answerHtml(), stripHtml(request.answerHtml()), request.referenceDoc(), fields.extensionJson(),fields.schemeId(),fields.snapshotJson(), user.id());
         jdbc.update("UPDATE qa_pair SET current_version_id = ? WHERE id = ?", versionId, pairId);
         logs.record(user.id(), "CREATE_QA_PAIR", "创建问答对", "QA_PAIR", pairId);
         return detail(pairId);
@@ -53,12 +57,12 @@ public class QaPairController {
         AuthUser user = users.findByUsername(authentication.getName());
         page = Math.max(page, 1); pageSize = Math.max(1, Math.min(pageSize, 100));
         int offset = (page - 1) * pageSize;
-        StringBuilder sql = new StringBuilder("SELECT p.id, p.qa_code, p.status, p.created_at, p.updated_at, v.submitted_at, v.question_text, v.version_no, u.real_name, d1.domain_name domain_l1_name, d2.domain_name domain_l2_name, d3.domain_name domain_l3_name FROM qa_pair p JOIN qa_pair_version v ON v.id = p.current_version_id JOIN sys_user u ON u.id = p.author_id JOIN qa_domain d1 ON d1.id=p.domain_l1_id JOIN qa_domain d2 ON d2.id=p.domain_l2_id LEFT JOIN qa_domain d3 ON d3.id=p.domain_l3_id WHERE p.deleted = 0");
+        StringBuilder sql = new StringBuilder("SELECT p.id, p.qa_code, p.status, p.created_at, p.updated_at, v.submitted_at, v.question_text, v.version_no, v.extension_data, v.field_scheme_id, u.real_name, d1.domain_name domain_l1_name, d2.domain_name domain_l2_name, d3.domain_name domain_l3_name FROM qa_pair p JOIN qa_pair_version v ON v.id = p.current_version_id JOIN sys_user u ON u.id = p.author_id JOIN qa_domain d1 ON d1.id=p.domain_l1_id JOIN qa_domain d2 ON d2.id=p.domain_l2_id LEFT JOIN qa_domain d3 ON d3.id=p.domain_l3_id WHERE p.deleted = 0");
         List<Object> args = new ArrayList<>();
-        boolean privileged = user.roles().stream().anyMatch(r -> Set.of("QA_ADMIN", "SYS_ADMIN").contains(r));
+        boolean privileged = user.roles().stream().anyMatch(r -> Set.of("QA_REVIEW_L1","QA_REVIEW_L2","QA_REVIEW_L3","QA_ADMIN", "SYS_ADMIN").contains(r));
         if (!privileged) { sql.append(" AND p.author_id = ?"); args.add(user.id()); }
         if (status != null && !status.isBlank()) { sql.append(" AND p.status = ?"); args.add(status); }
-        if (keyword != null && !keyword.isBlank()) { sql.append(" AND (p.qa_code LIKE ? OR v.question_text LIKE ?)"); args.add("%" + keyword + "%"); args.add("%" + keyword + "%"); }
+        if (keyword != null && !keyword.isBlank()) { sql.append(" AND (p.qa_code LIKE ? OR v.question_text LIKE ? OR v.answer_text LIKE ? OR DBMS_LOB.INSTR(v.extension_data, ?) > 0)"); args.add("%" + keyword + "%"); args.add("%" + keyword + "%"); args.add("%" + keyword + "%"); args.add(keyword); }
         if (domainL1Id != null && !domainL1Id.isBlank()) { sql.append(" AND p.domain_l1_id = ?"); args.add(domainL1Id); }
         if (domainL2Id != null && !domainL2Id.isBlank()) { sql.append(" AND p.domain_l2_id = ?"); args.add(domainL2Id); }
         if (domainL3Id != null && !domainL3Id.isBlank()) { sql.append(" AND p.domain_l3_id = ?"); args.add(domainL3Id); }
@@ -66,7 +70,15 @@ public class QaPairController {
         if (submitTo != null && !submitTo.isBlank()) { sql.append(" AND v.submitted_at <= TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS')"); args.add(submitTo.length() == 10 ? submitTo + " 23:59:59" : submitTo); }
         Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM (" + sql + ") t", Integer.class, args.toArray());
         Map<String,String> sortColumns=Map.of("updatedAt","p.updated_at","createdAt","p.created_at","submittedAt","v.submitted_at","code","p.qa_code","question","v.question_text");
-        String order=sortColumns.getOrDefault(sortBy,"p.updated_at"); String direction="asc".equalsIgnoreCase(sortDir)?"ASC":"DESC";
+        String order=sortColumns.getOrDefault(sortBy,"p.updated_at");
+        if(sortBy.startsWith("field:")){
+            String code=sortBy.substring(6);
+            if(code.matches("[A-Za-z][A-Za-z0-9_]{0,63}")){
+                Integer allowed=jdbc.queryForObject("SELECT COUNT(*) FROM qa_field_config f JOIN qa_field_scheme s ON s.id=f.scheme_id WHERE s.is_default=1 AND s.enabled=1 AND f.field_code=? AND f.sortable=1",Integer.class,code);
+                if(allowed!=null&&allowed>0)order="JSON_VALUE(v.extension_data, '$."+code+"')";
+            }
+        }
+        String direction="asc".equalsIgnoreCase(sortDir)?"ASC":"DESC";
         sql.append(" ORDER BY ").append(order).append(' ').append(direction).append(" LIMIT ? OFFSET ?"); args.add(pageSize); args.add(offset);
         List<Map<String, Object>> rows = jdbc.queryForList(sql.toString(), args.toArray());
         return Map.of("items", rows, "page", page, "pageSize", pageSize, "total", total == null ? 0 : total);
@@ -82,6 +94,7 @@ public class QaPairController {
     public Map<String, Object> submit(@PathVariable String id, Authentication authentication) {
         Map<String, Object> pair = detailWithAccess(id, authentication);
         if (!Set.of("draft", "updating", "rejected_l1", "rejected_l2", "rejected_l3").contains(String.valueOf(pair.get("status")))) throw new IllegalArgumentException("当前状态不能提交审核");
+        fieldSchemes.validateSubmit(String.valueOf(pair.get("currentVersionId")));
         jdbc.update("UPDATE qa_pair SET status = 'pending_review_l1', updated_at = CURRENT_TIMESTAMP WHERE id = ?", id);
         jdbc.update("UPDATE qa_pair_version SET version_status = 'pending_review_l1', submitted_at = CURRENT_TIMESTAMP WHERE qa_pair_id = ? AND id = ?", id, pair.get("currentVersionId"));
         workflow.submit(String.valueOf(pair.get("currentVersionId")), id);
@@ -94,6 +107,7 @@ public class QaPairController {
     @Transactional
     public Map<String, Object> startUpdate(@PathVariable String id, Authentication authentication, @Valid @RequestBody UpdateQaRequest request) {
         AuthUser user = users.findByUsername(authentication.getName());
+        validateRichContent(request.questionHtml(), request.answerHtml());
         Map<String, Object> current = detailWithAccess(id, authentication);
         if (!Set.of("published", "retired").contains(String.valueOf(current.get("status")))) throw new IllegalArgumentException("仅已发布或已退役问答对可以发起更新");
         if (request.changeReason() == null || request.changeReason().isBlank()) throw new IllegalArgumentException("变更原因不能为空");
@@ -101,8 +115,10 @@ public class QaPairController {
         int next = 1;
         try { next = Integer.parseInt(oldVersion.replaceFirst("[^0-9]*([0-9]+).*", "$1")) + 1; } catch (RuntimeException ignored) { }
         String versionId = UUID.randomUUID().toString();
-        jdbc.update("INSERT INTO qa_pair_version(id, qa_pair_id, version_no, question_html, question_text, answer_html, answer_text, reference_doc, extension_data, version_status, change_reason, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)",
-                versionId, id, "V" + next + ".0", request.questionHtml(), stripHtml(request.questionHtml()), request.answerHtml(), stripHtml(request.answerHtml()), request.referenceDoc(), request.extensionData(), request.changeReason(), user.id());
+        String schemeId=schemeId(request.fieldSchemeId(),current);
+        FieldSchemeService.Resolved fields=fieldSchemes.resolveExisting(schemeId,stringValue(current,"field_schema_snapshot"),request.extensionData(),core(request.questionHtml(),request.answerHtml(),request.referenceDoc(),user.id()),false);
+        jdbc.update("INSERT INTO qa_pair_version(id, qa_pair_id, version_no, question_html, question_text, answer_html, answer_text, reference_doc, extension_data,field_scheme_id,field_schema_snapshot, version_status, change_reason, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?,?, 'draft', ?, ?)",
+                versionId, id, "V" + next + ".0", request.questionHtml(), stripHtml(request.questionHtml()), request.answerHtml(), stripHtml(request.answerHtml()), request.referenceDoc(), fields.extensionJson(),fields.schemeId(),fields.snapshotJson(), request.changeReason(), user.id());
         jdbc.update("UPDATE qa_pair SET current_version_id = ?, status = 'updating', updated_at = CURRENT_TIMESTAMP WHERE id = ?", versionId, id);
         return detail(id);
     }
@@ -113,9 +129,13 @@ public class QaPairController {
     public Map<String,Object> editDraft(@PathVariable String id, Authentication authentication, @Valid @RequestBody EditQaRequest request) {
         Map<String,Object> pair=detailWithAccess(id,authentication);
         if(!Set.of("draft","updating","rejected_l1","rejected_l2","rejected_l3").contains(String.valueOf(pair.get("status")))) throw new IllegalArgumentException("当前状态不可修改");
+        validateRichContent(request.questionHtml(), request.answerHtml());
         validateDomain(request.domainL1Id(),request.domainL2Id(),request.domainL3Id());
+        AuthUser user=users.findByUsername(authentication.getName());
+        String schemeId=schemeId(request.fieldSchemeId(),pair);
+        FieldSchemeService.Resolved fields=fieldSchemes.resolveExisting(schemeId,stringValue(pair,"field_schema_snapshot"),request.extensionData(),core(request.questionHtml(),request.answerHtml(),request.referenceDoc(),user.id()),false);
         jdbc.update("UPDATE qa_pair SET domain_l1_id=?,domain_l2_id=?,domain_l3_id=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",request.domainL1Id(),request.domainL2Id(),request.domainL3Id(),id);
-        jdbc.update("UPDATE qa_pair_version SET question_html=?,question_text=?,answer_html=?,answer_text=?,reference_doc=?,extension_data=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",request.questionHtml(),stripHtml(request.questionHtml()),request.answerHtml(),stripHtml(request.answerHtml()),request.referenceDoc(),request.extensionData(),pair.get("currentVersionId"));
+        jdbc.update("UPDATE qa_pair_version SET question_html=?,question_text=?,answer_html=?,answer_text=?,reference_doc=?,extension_data=?,field_scheme_id=?,field_schema_snapshot=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",request.questionHtml(),stripHtml(request.questionHtml()),request.answerHtml(),stripHtml(request.answerHtml()),request.referenceDoc(),fields.extensionJson(),fields.schemeId(),fields.snapshotJson(),pair.get("currentVersionId"));
         logs.record(users.findByUsername(authentication.getName()).id(),"UPDATE_QA_PAIR","修改问答对","QA_PAIR",id); return detail(id);
     }
 
@@ -145,7 +165,7 @@ public class QaPairController {
     @Transactional
     public Map<String,Object> batchSubmit(@RequestBody IdsRequest request, Authentication authentication) {
         if (request == null || request.ids() == null || request.ids().isEmpty()) throw new IllegalArgumentException("请选择要提交的问答对");
-        int count=0; for(String id:request.ids()){Map<String,Object> pair=detailWithAccess(id,authentication);if(Set.of("draft","updating","rejected_l1","rejected_l2","rejected_l3").contains(String.valueOf(pair.get("status")))){jdbc.update("UPDATE qa_pair SET status='pending_review_l1',updated_at=CURRENT_TIMESTAMP WHERE id=?",id);jdbc.update("UPDATE qa_pair_version SET version_status='pending_review_l1',submitted_at=CURRENT_TIMESTAMP WHERE id=?",pair.get("currentVersionId"));workflow.submit(String.valueOf(pair.get("currentVersionId")),id);count++;}}
+        int count=0; for(String id:request.ids()){Map<String,Object> pair=detailWithAccess(id,authentication);if(Set.of("draft","updating","rejected_l1","rejected_l2","rejected_l3").contains(String.valueOf(pair.get("status")))){fieldSchemes.validateSubmit(String.valueOf(pair.get("currentVersionId")));jdbc.update("UPDATE qa_pair SET status='pending_review_l1',updated_at=CURRENT_TIMESTAMP WHERE id=?",id);jdbc.update("UPDATE qa_pair_version SET version_status='pending_review_l1',submitted_at=CURRENT_TIMESTAMP WHERE id=?",pair.get("currentVersionId"));workflow.submit(String.valueOf(pair.get("currentVersionId")),id);count++;}}
         return Map.of("submitted",count,"total",request.ids().size());
     }
 
@@ -161,14 +181,14 @@ public class QaPairController {
     private Map<String, Object> detailWithAccess(String id, Authentication authentication) {
         Map<String, Object> row = detail(id);
         AuthUser user = users.findByUsername(authentication.getName());
-        boolean privileged = user.roles().stream().anyMatch(r -> Set.of("QA_ADMIN", "SYS_ADMIN").contains(r));
+        boolean privileged = user.roles().stream().anyMatch(r -> Set.of("QA_REVIEW_L1","QA_REVIEW_L2","QA_REVIEW_L3","QA_ADMIN", "SYS_ADMIN").contains(r));
         boolean assigned = jdbc.queryForObject("SELECT COUNT(*) FROM qa_review_task WHERE version_id=? AND reviewer_id=?", Integer.class, row.get("currentVersionId"), user.id()) > 0;
         if (!privileged && !user.id().equals(row.get("authorId")) && !assigned) throw new org.springframework.security.access.AccessDeniedException("无权访问该问答对");
         return row;
     }
 
     private Map<String, Object> detail(String id) {
-        var rows = jdbc.queryForList("SELECT p.id, p.qa_code, p.status, p.author_id, p.current_version_id, p.domain_l1_id, p.domain_l2_id, p.domain_l3_id, p.created_at, p.updated_at, v.version_no, v.question_html, v.answer_html, v.reference_doc, v.extension_data, u.real_name, d1.domain_name domain_l1_name, d2.domain_name domain_l2_name, d3.domain_name domain_l3_name FROM qa_pair p JOIN qa_pair_version v ON v.id = p.current_version_id JOIN sys_user u ON u.id = p.author_id JOIN qa_domain d1 ON d1.id=p.domain_l1_id JOIN qa_domain d2 ON d2.id=p.domain_l2_id LEFT JOIN qa_domain d3 ON d3.id=p.domain_l3_id WHERE p.id = ? AND p.deleted = 0", id);
+        var rows = jdbc.queryForList("SELECT p.id, p.qa_code, p.status, p.author_id, p.current_version_id, p.domain_l1_id, p.domain_l2_id, p.domain_l3_id, p.created_at, p.updated_at, v.version_no, v.question_html, v.answer_html, v.reference_doc, v.extension_data,v.field_scheme_id,v.field_schema_snapshot, u.real_name, d1.domain_name domain_l1_name, d2.domain_name domain_l2_name, d3.domain_name domain_l3_name FROM qa_pair p JOIN qa_pair_version v ON v.id = p.current_version_id JOIN sys_user u ON u.id = p.author_id JOIN qa_domain d1 ON d1.id=p.domain_l1_id JOIN qa_domain d2 ON d2.id=p.domain_l2_id LEFT JOIN qa_domain d3 ON d3.id=p.domain_l3_id WHERE p.id = ? AND p.deleted = 0", id);
         if (rows.isEmpty()) throw new NoSuchElementException("问答对不存在");
         Map<String, Object> r = new LinkedHashMap<>(rows.get(0));
         r.put("authorId", r.remove("author_id")); r.put("currentVersionId", r.remove("current_version_id"));
@@ -195,11 +215,18 @@ public class QaPairController {
         for (Map<String,Object> row: rows) jdbc.update("INSERT INTO qa_review_task(id,version_id,flow_id,level_no,reviewer_id,task_status) SELECT ?,?,?,?,?, 'pending' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM qa_review_task WHERE version_id=? AND level_no=? AND reviewer_id=?)", UUID.randomUUID().toString(), versionId, row.get("FLOW_ID"), level, row.get("USER_ID"), versionId, level, row.get("USER_ID"));
     }
     private String stripHtml(String html) { return html.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim(); }
+    private void validateRichContent(String questionHtml, String answerHtml) {
+        if (questionHtml == null || stripHtml(questionHtml.replace("&nbsp;", " ")).isBlank()) throw new IllegalArgumentException("问题不能为空");
+        if (answerHtml == null || stripHtml(answerHtml.replace("&nbsp;", " ")).isBlank()) throw new IllegalArgumentException("答案不能为空");
+    }
+    private String schemeId(String requested,Map<String,Object> row){if(requested!=null&&!requested.isBlank())return requested;String current=stringValue(row,"field_scheme_id");return current==null||current.isBlank()?null:current;}
+    private String stringValue(Map<String,Object> row,String key){Object value=row.containsKey(key)?row.get(key):row.get(key.toUpperCase(Locale.ROOT));return value==null?null:String.valueOf(value);}
+    private Map<String,Object> core(String question,String answer,String reference,String author){Map<String,Object> result=new HashMap<>();result.put("questionText",stripHtml(question));result.put("answerText",stripHtml(answer));result.put("referenceDoc",reference==null?"":reference);result.put("author",author);result.put("attachments","");return result;}
 
     public record CreateQaRequest(@NotBlank String domainL1Id, @NotBlank String domainL2Id, String domainL3Id,
-                                  @NotBlank String questionHtml, @NotBlank String answerHtml, String referenceDoc, String extensionData) {}
-    public record UpdateQaRequest(@NotBlank String questionHtml, @NotBlank String answerHtml, String referenceDoc, String extensionData, String changeReason) {}
-    public record EditQaRequest(@NotBlank String domainL1Id,@NotBlank String domainL2Id,String domainL3Id,@NotBlank String questionHtml,@NotBlank String answerHtml,String referenceDoc,String extensionData) {}
+                                  @NotBlank String questionHtml, @NotBlank String answerHtml, String referenceDoc, String extensionData,String fieldSchemeId) {}
+    public record UpdateQaRequest(@NotBlank String questionHtml, @NotBlank String answerHtml, String referenceDoc, String extensionData, String changeReason,String fieldSchemeId) {}
+    public record EditQaRequest(@NotBlank String domainL1Id,@NotBlank String domainL2Id,String domainL3Id,@NotBlank String questionHtml,@NotBlank String answerHtml,String referenceDoc,String extensionData,String fieldSchemeId) {}
     public record RetireRequest(String reason) {}
     public record IdsRequest(List<String> ids) {}
 }

@@ -19,84 +19,130 @@ public class ReviewController {
     private final JdbcTemplate jdbc;
     private final AuthUserService users;
     private final OperationLogService logs;
+    private final ReviewWorkflow workflow;
 
-    public ReviewController(JdbcTemplate jdbc, AuthUserService users, OperationLogService logs) { this.jdbc = jdbc; this.users = users; this.logs = logs; }
+    public ReviewController(JdbcTemplate jdbc, AuthUserService users, OperationLogService logs, ReviewWorkflow workflow) {
+        this.jdbc = jdbc;
+        this.users = users;
+        this.logs = logs;
+        this.workflow = workflow;
+    }
 
     @GetMapping("/pending")
-    @PreAuthorize("hasAnyRole('QA_REVIEW_L1','QA_REVIEW_L2','QA_REVIEW_L3','QA_ADMIN','SYS_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public Map<String, Object> pending(@RequestParam(defaultValue = "1") int level, @RequestParam(defaultValue = "1") int page,
-                                       @RequestParam(defaultValue = "10") int pageSize, Authentication authentication) {
+                                       @RequestParam(defaultValue = "10") int pageSize,
+                                       @RequestParam(required=false) String keyword,@RequestParam(required=false) String submitter,
+                                       @RequestParam(required=false) String domainL1Id,@RequestParam(required=false) String domainL2Id,@RequestParam(required=false) String domainL3Id,
+                                       @RequestParam(required=false) String submitFrom,@RequestParam(required=false) String submitTo,
+                                       @RequestParam(defaultValue="assignedAt") String sortBy,@RequestParam(defaultValue="asc") String sortDir,
+                                       Authentication authentication) {
         if (level < 1 || level > 3) throw new IllegalArgumentException("审核级别必须为1、2或3");
         page = Math.max(page, 1); pageSize = Math.max(1, Math.min(pageSize, 100));
         AuthUser user = users.findByUsername(authentication.getName());
         String status = "pending_review_l" + level;
-        boolean privileged = user.roles().stream().anyMatch(r -> Set.of("QA_ADMIN", "SYS_ADMIN").contains(r));
-        StringBuilder sql = new StringBuilder("SELECT p.id, p.qa_code, p.status, p.updated_at, v.question_text, u.real_name FROM qa_pair p JOIN qa_pair_version v ON v.id = p.current_version_id JOIN sys_user u ON u.id = p.author_id WHERE p.deleted = 0 AND p.status = ?");
-        List<Object> args = new ArrayList<>(List.of(status));
-        if (!privileged) {
-            sql.append(" AND EXISTS (SELECT 1 FROM qa_review_task rt WHERE rt.version_id = p.current_version_id AND rt.level_no = ? AND rt.reviewer_id = ? AND rt.task_status = 'pending')");
-            args.add(level); args.add(user.id());
-        }
+        StringBuilder sql = new StringBuilder("SELECT p.id,p.qa_code,p.status,p.updated_at,v.question_text,v.submitted_at,u.real_name,d1.domain_name domain_l1_name,d2.domain_name domain_l2_name,d3.domain_name domain_l3_name,rt.assigned_at FROM qa_pair p JOIN qa_pair_version v ON v.id=p.current_version_id JOIN sys_user u ON u.id=p.author_id JOIN qa_domain d1 ON d1.id=p.domain_l1_id JOIN qa_domain d2 ON d2.id=p.domain_l2_id LEFT JOIN qa_domain d3 ON d3.id=p.domain_l3_id JOIN qa_review_task rt ON rt.version_id=p.current_version_id AND rt.level_no=? AND rt.reviewer_id=? AND rt.task_status='pending' WHERE p.deleted=0 AND p.status=?");
+        List<Object> args = new ArrayList<>(List.of(level, user.id(), status));
+        if(keyword!=null&&!keyword.isBlank()){sql.append(" AND (p.qa_code LIKE ? OR v.question_text LIKE ? OR v.answer_text LIKE ?)");String like="%"+keyword.trim()+"%";args.add(like);args.add(like);args.add(like);}
+        if(submitter!=null&&!submitter.isBlank()){sql.append(" AND u.real_name LIKE ?");args.add("%"+submitter.trim()+"%");}
+        if(domainL1Id!=null&&!domainL1Id.isBlank()){sql.append(" AND p.domain_l1_id=?");args.add(domainL1Id);}
+        if(domainL2Id!=null&&!domainL2Id.isBlank()){sql.append(" AND p.domain_l2_id=?");args.add(domainL2Id);}
+        if(domainL3Id!=null&&!domainL3Id.isBlank()){sql.append(" AND p.domain_l3_id=?");args.add(domainL3Id);}
+        if(submitFrom!=null&&!submitFrom.isBlank()){sql.append(" AND v.submitted_at>=TO_TIMESTAMP(?,'YYYY-MM-DD HH24:MI:SS')");args.add(submitFrom+" 00:00:00");}
+        if(submitTo!=null&&!submitTo.isBlank()){sql.append(" AND v.submitted_at<=TO_TIMESTAMP(?,'YYYY-MM-DD HH24:MI:SS')");args.add(submitTo+" 23:59:59");}
         Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM (" + sql + ") t", Integer.class, args.toArray());
-        sql.append(" ORDER BY p.updated_at ASC LIMIT ? OFFSET ?"); args.add(pageSize); args.add((page - 1) * pageSize);
+        String order=Map.of("assignedAt","rt.assigned_at","code","p.qa_code","submitter","u.real_name","submittedAt","v.submitted_at").getOrDefault(sortBy,"rt.assigned_at");
+        sql.append(" ORDER BY ").append(order).append("desc".equalsIgnoreCase(sortDir)?" DESC":" ASC").append(" LIMIT ? OFFSET ?"); args.add(pageSize); args.add((page - 1) * pageSize);
         return Map.of("items", jdbc.queryForList(sql.toString(), args.toArray()), "total", total == null ? 0 : total, "page", page, "pageSize", pageSize, "level", level);
     }
 
     @PostMapping("/{qaPairId}/decision")
-    @PreAuthorize("hasAnyRole('QA_REVIEW_L1','QA_REVIEW_L2','QA_REVIEW_L3','QA_ADMIN','SYS_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Transactional
     public Map<String, Object> decide(@PathVariable String qaPairId, @Valid @RequestBody DecisionRequest request, Authentication authentication) {
         AuthUser reviewer = users.findByUsername(authentication.getName());
         String result = request.result().trim().toLowerCase(Locale.ROOT);
         if (!Set.of("pass", "reject").contains(result)) throw new IllegalArgumentException("审核结果只能是pass或reject");
-        Map<String, Object> pair = jdbc.queryForList("SELECT id, current_version_id, status FROM qa_pair WHERE id = ? AND deleted = 0 FOR UPDATE", qaPairId).stream().findFirst().orElseThrow(() -> new NoSuchElementException("问答对不存在"));
+        Map<String, Object> pair = jdbc.queryForList("SELECT status FROM qa_pair WHERE id = ? AND deleted = 0", qaPairId).stream().findFirst().orElseThrow(() -> new NoSuchElementException("问答对不存在"));
         String status = String.valueOf(pair.get("status"));
         int level = switch (status) { case "pending_review_l1" -> 1; case "pending_review_l2" -> 2; case "pending_review_l3" -> 3; default -> 0; };
         if (level == 0) throw new IllegalArgumentException("当前状态不在审核流程中");
-        Integer assigned = jdbc.queryForObject("SELECT COUNT(*) FROM qa_review_task WHERE version_id=? AND level_no=? AND reviewer_id=? AND task_status='pending'", Integer.class, pair.get("current_version_id"), level, reviewer.id());
-        boolean privileged = reviewer.roles().stream().anyMatch(r -> Set.of("SYS_ADMIN", "QA_ADMIN").contains(r));
-        boolean allowed = privileged || (assigned != null && assigned > 0 && reviewer.roles().contains("QA_REVIEW_L" + level));
-        if (!allowed) throw new org.springframework.security.access.AccessDeniedException("当前用户未被分配该审核任务");
         if ("reject".equals(result) && (request.opinion() == null || request.opinion().isBlank())) throw new IllegalArgumentException("驳回时必须填写审核意见");
-        String versionId = String.valueOf(pair.get("current_version_id"));
-        jdbc.update("INSERT INTO qa_review_record(id, version_id, level_no, reviewer_id, result, opinion, suggestion) VALUES (?, ?, ?, ?, ?, ?, ?)", UUID.randomUUID().toString(), versionId, level, reviewer.id(), result, request.opinion(), request.suggestion());
-        if (privileged && "pass".equals(result)) {
-            // 管理员审批代表本级管理性确认，关闭本级所有待办，避免错误配置的
-            // 审核人（例如没有对应审核角色的用户）永久阻塞流程。
-            jdbc.update("UPDATE qa_review_task SET task_status='pass', completed_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND task_status='pending'", versionId, level);
-        } else {
-            jdbc.update("UPDATE qa_review_task SET task_status=?, completed_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND reviewer_id=? AND task_status='pending'", result, versionId, level, reviewer.id());
-        }
-        if ("reject".equals(result)) {
-            jdbc.update("UPDATE qa_review_task SET task_status='cancelled', completed_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND task_status='pending'", versionId, level);
-        }
-        String passRule = String.valueOf(jdbc.queryForObject("SELECT pass_rule FROM qa_review_flow WHERE domain_l1_id=(SELECT domain_l1_id FROM qa_pair WHERE id=?) AND enabled=1 ORDER BY flow_version DESC FETCH FIRST 1 ROWS ONLY", String.class, qaPairId));
-        Integer configuredLevels = jdbc.queryForObject("SELECT MAX(n.level_no) FROM qa_review_flow f JOIN qa_review_flow_node n ON n.flow_id=f.id WHERE f.domain_l1_id=(SELECT domain_l1_id FROM qa_pair WHERE id=?) AND f.enabled=1", Integer.class, qaPairId);
-        int maxLevel = configuredLevels == null ? 3 : configuredLevels;
-        Integer pending = jdbc.queryForObject("SELECT COUNT(*) FROM qa_review_task WHERE version_id=? AND level_no=? AND task_status='pending'", Integer.class, versionId, level);
-        Integer failed = jdbc.queryForObject("SELECT COUNT(*) FROM qa_review_task WHERE version_id=? AND level_no=? AND task_status='reject'", Integer.class, versionId, level);
-        boolean levelPassed = "pass".equals(result) && ("ANY".equalsIgnoreCase(passRule) || (pending == null || pending == 0) && (failed == null || failed == 0));
-        if (levelPassed && "ANY".equalsIgnoreCase(passRule)) jdbc.update("UPDATE qa_review_task SET task_status='cancelled',completed_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND task_status='pending'", versionId, level);
-        String nextStatus = "reject".equals(result) ? "rejected_l" + level : (levelPassed ? (level >= maxLevel ? "published" : "pending_review_l" + (level + 1)) : "pending_review_l" + level);
-        if ("published".equals(nextStatus)) {
-            jdbc.update("UPDATE qa_pair SET status = ?, published_version_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", nextStatus, versionId, qaPairId);
-        } else {
-            jdbc.update("UPDATE qa_pair SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", nextStatus, qaPairId);
-        }
-        jdbc.update("UPDATE qa_pair_version SET version_status = ?, published_at = CASE WHEN ? = 'published' THEN CURRENT_TIMESTAMP ELSE published_at END WHERE id = ?", nextStatus, nextStatus, versionId);
-        if (levelPassed && level < maxLevel) {
-            createTasks(versionId, qaPairId, level + 1);
-            jdbc.update("UPDATE qa_review_task SET task_status='pending',assigned_at=CURRENT_TIMESTAMP WHERE version_id=? AND level_no=? AND task_status='waiting'", versionId, level + 1);
-        }
+        String nextStatus = workflow.decide(qaPairId, reviewer.id(), result, request.opinion(), request.suggestion());
         logs.record(reviewer.id(), "REVIEW_QA_PAIR", request.result() + " level=" + level, "QA_PAIR", qaPairId);
         return Map.of("qaPairId", qaPairId, "level", level, "result", request.result(), "status", nextStatus);
     }
 
+    @GetMapping("/my-summary")
+    @PreAuthorize("isAuthenticated()")
+    public Map<String, Object> mySummary(Authentication authentication) {
+        AuthUser user = users.findByUsername(authentication.getName());
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                SELECT t.level_no, COUNT(*) AS task_count, MIN(t.assigned_at) AS oldest_assigned_at
+                  FROM qa_review_task t
+                  JOIN qa_pair_version v ON v.id = t.version_id
+                  JOIN qa_pair p ON p.id = v.qa_pair_id AND p.current_version_id = v.id
+                 WHERE t.reviewer_id = ? AND t.task_status = 'pending' AND p.deleted = 0
+                 GROUP BY t.level_no ORDER BY t.level_no
+                """, user.id());
+        Map<Integer, Integer> byLevel = new LinkedHashMap<>();
+        Object oldest = null;
+        int total = 0;
+        for (Map<String, Object> row : rows) {
+            Object levelValue = row.getOrDefault("level_no", row.get("LEVEL_NO"));
+            Object countValue = row.getOrDefault("task_count", row.get("TASK_COUNT"));
+            int rowLevel = ((Number) levelValue).intValue();
+            int count = ((Number) countValue).intValue();
+            byLevel.put(rowLevel, count);
+            total += count;
+            Object assignedAt = row.getOrDefault("oldest_assigned_at", row.get("OLDEST_ASSIGNED_AT"));
+            if (assignedAt != null && (oldest == null || assignedAt.toString().compareTo(oldest.toString()) < 0)) oldest = assignedAt;
+        }
+        Map<String, Object> resultMap = new LinkedHashMap<>();
+        resultMap.put("total", total);
+        resultMap.put("byLevel", byLevel);
+        resultMap.put("oldestAssignedAt", oldest);
+        return resultMap;
+    }
+
     @GetMapping("/history")
     @PreAuthorize("isAuthenticated()")
-    public List<Map<String, Object>> history(@RequestParam(required = false) String qaPairId) {
-        if (qaPairId == null || qaPairId.isBlank()) return jdbc.queryForList("SELECT r.reviewed_at, r.level_no, r.result, r.opinion, r.suggestion, u.real_name AS reviewer_name, v.qa_pair_id FROM qa_review_record r JOIN sys_user u ON u.id = r.reviewer_id JOIN qa_pair_version v ON v.id = r.version_id ORDER BY r.reviewed_at DESC");
-        return jdbc.queryForList("SELECT r.reviewed_at, r.level_no, r.result, r.opinion, r.suggestion, u.real_name AS reviewer_name, v.qa_pair_id FROM qa_review_record r JOIN sys_user u ON u.id = r.reviewer_id JOIN qa_pair_version v ON v.id = r.version_id WHERE v.qa_pair_id = ? ORDER BY r.reviewed_at DESC", qaPairId);
+    public Map<String,Object> history(@RequestParam(required = false) String qaPairId,
+                                      @RequestParam(required=false) String keyword,@RequestParam(required=false) Integer level,
+                                      @RequestParam(required=false) String reviewerId,@RequestParam(required=false) String result,
+                                      @RequestParam(required=false) String domainL1Id,@RequestParam(required=false) String domainL2Id,@RequestParam(required=false) String domainL3Id,
+                                      @RequestParam(required=false) String reviewedFrom,@RequestParam(required=false) String reviewedTo,
+                                      @RequestParam(defaultValue="reviewedAt") String sortBy,@RequestParam(defaultValue="desc") String sortDir,
+                                      @RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="10") int pageSize,
+                                      Authentication authentication) {
+        AuthUser current=users.findByUsername(authentication.getName());boolean admin=current.roles().stream().anyMatch(x->Set.of("QA_ADMIN","SYS_ADMIN").contains(x));boolean reviewer=current.roles().stream().anyMatch(x->x.startsWith("QA_REVIEW_"));
+        page=Math.max(1,page);pageSize=Math.min(100,Math.max(1,pageSize));
+        StringBuilder sql = new StringBuilder("""
+                SELECT r.reviewed_at, r.level_no, r.result, r.opinion, r.suggestion,
+                       u.real_name AS reviewer_name, u.username AS reviewer_username,
+                       v.qa_pair_id, p.qa_code,v.question_text,v.answer_text,
+                       d1.domain_name domain_l1_name,d2.domain_name domain_l2_name,d3.domain_name domain_l3_name
+                  FROM qa_review_record r
+                  JOIN sys_user u ON u.id = r.reviewer_id
+                  JOIN qa_pair_version v ON v.id = r.version_id
+                  JOIN qa_pair p ON p.id = v.qa_pair_id
+                  JOIN qa_domain d1 ON d1.id=p.domain_l1_id JOIN qa_domain d2 ON d2.id=p.domain_l2_id LEFT JOIN qa_domain d3 ON d3.id=p.domain_l3_id
+                 WHERE p.deleted=0
+                """);List<Object> args=new ArrayList<>();
+        if(!admin){if(qaPairId!=null&&!qaPairId.isBlank()&&reviewer){}else if(reviewer){sql.append(" AND r.reviewer_id=?");args.add(current.id());}else{sql.append(" AND p.author_id=?");args.add(current.id());}}
+        if(qaPairId!=null&&!qaPairId.isBlank()){sql.append(" AND p.id=?");args.add(qaPairId);}
+        if(keyword!=null&&!keyword.isBlank()){sql.append(" AND (p.qa_code LIKE ? OR v.question_text LIKE ? OR v.answer_text LIKE ?)");String like="%"+keyword.trim()+"%";args.add(like);args.add(like);args.add(like);}
+        if(level!=null&&level>=1&&level<=3){sql.append(" AND r.level_no=?");args.add(level);}
+        if(reviewerId!=null&&!reviewerId.isBlank()){sql.append(" AND r.reviewer_id=?");args.add(reviewerId);}
+        if(result!=null&&!result.isBlank()){sql.append(" AND r.result=?");args.add(result);}
+        if(domainL1Id!=null&&!domainL1Id.isBlank()){sql.append(" AND p.domain_l1_id=?");args.add(domainL1Id);}
+        if(domainL2Id!=null&&!domainL2Id.isBlank()){sql.append(" AND p.domain_l2_id=?");args.add(domainL2Id);}
+        if(domainL3Id!=null&&!domainL3Id.isBlank()){sql.append(" AND p.domain_l3_id=?");args.add(domainL3Id);}
+        if(reviewedFrom!=null&&!reviewedFrom.isBlank()){sql.append(" AND r.reviewed_at>=TO_TIMESTAMP(?,'YYYY-MM-DD HH24:MI:SS')");args.add(reviewedFrom+" 00:00:00");}
+        if(reviewedTo!=null&&!reviewedTo.isBlank()){sql.append(" AND r.reviewed_at<=TO_TIMESTAMP(?,'YYYY-MM-DD HH24:MI:SS')");args.add(reviewedTo+" 23:59:59");}
+        Integer total=jdbc.queryForObject("SELECT COUNT(*) FROM ("+sql+") t",Integer.class,args.toArray());
+        String order=Map.of("reviewedAt","r.reviewed_at","level","r.level_no","reviewer","u.real_name","code","p.qa_code").getOrDefault(sortBy,"r.reviewed_at");sql.append(" ORDER BY ").append(order).append("asc".equalsIgnoreCase(sortDir)?" ASC":" DESC").append(" LIMIT ? OFFSET ?");args.add(pageSize);args.add((page-1)*pageSize);
+        return Map.of("items",jdbc.queryForList(sql.toString(),args.toArray()),"total",total==null?0:total,"page",page,"pageSize",pageSize);
     }
     @GetMapping("/tasks")
     @PreAuthorize("hasAnyRole('QA_REVIEW_L1','QA_REVIEW_L2','QA_REVIEW_L3','QA_ADMIN','SYS_ADMIN')")
@@ -108,8 +154,4 @@ public class ReviewController {
 
     public record DecisionRequest(@NotBlank String result, String opinion, String suggestion) {}
 
-    private void createTasks(String versionId, String pairId, int level) {
-        List<Map<String,Object>> rows = jdbc.queryForList("SELECT f.id flow_id,r.user_id FROM qa_review_flow f JOIN qa_review_flow_node n ON n.flow_id=f.id AND n.level_no=? JOIN qa_review_flow_reviewer r ON r.node_id=n.id WHERE f.domain_l1_id=(SELECT domain_l1_id FROM qa_pair WHERE id=?) AND f.enabled=1", level, pairId);
-        for (Map<String,Object> row: rows) jdbc.update("INSERT INTO qa_review_task(id,version_id,flow_id,level_no,reviewer_id,task_status) SELECT ?,?,?,?,?, 'pending' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM qa_review_task WHERE version_id=? AND level_no=? AND reviewer_id=? )", UUID.randomUUID().toString(),versionId,row.get("FLOW_ID"),level,row.get("USER_ID"),versionId,level,row.get("USER_ID"));
-    }
 }

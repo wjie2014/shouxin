@@ -49,7 +49,10 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Map<String, Object> unknown(Exception ex) { return error("INTERNAL_ERROR", "服务器内部错误"); }
+    public Map<String, Object> unknown(Exception ex) {
+        log.error("Unhandled API exception", ex);
+        return error("INTERNAL_ERROR", "服务器内部错误");
+    }
 
     private Map<String, Object> error(String code, String message) {
         return Map.of("code", code, "message", message == null ? "请求失败" : message, "timestamp", OffsetDateTime.now());

@@ -15,7 +15,16 @@ public class ReviewFlowAdminController {
     private final JdbcTemplate jdbc;
     public ReviewFlowAdminController(JdbcTemplate jdbc) { this.jdbc = jdbc; }
     @GetMapping public List<Map<String,Object>> list() { return jdbc.queryForList("SELECT f.id,f.domain_l1_id,d.domain_name,f.flow_version,f.pass_rule,f.enabled FROM qa_review_flow f JOIN qa_domain d ON d.id=f.domain_l1_id WHERE f.enabled=1 ORDER BY d.sort_order,f.flow_version DESC"); }
-    @GetMapping("/{id}") public Map<String,Object> get(@PathVariable String id) { Map<String,Object> r=jdbc.queryForMap("SELECT id,domain_l1_id,flow_version,pass_rule,enabled FROM qa_review_flow WHERE id=?",id); r.put("nodes",jdbc.queryForList("SELECT n.id,n.level_no,n.node_name,LISTAGG(u.real_name,',') WITHIN GROUP (ORDER BY u.real_name) reviewers,LISTAGG(fr.user_id,',') WITHIN GROUP (ORDER BY fr.user_id) reviewer_ids FROM qa_review_flow_node n LEFT JOIN qa_review_flow_reviewer fr ON fr.node_id=n.id LEFT JOIN sys_user u ON u.id=fr.user_id WHERE n.flow_id=? GROUP BY n.id,n.level_no,n.node_name ORDER BY n.level_no",id)); return r; }
+    @GetMapping("/{id}") public Map<String,Object> get(@PathVariable String id) {
+        if (id == null || id.isBlank() || "undefined".equalsIgnoreCase(id) || "null".equalsIgnoreCase(id)) {
+            throw new NoSuchElementException("审核流程不存在");
+        }
+        var rows = jdbc.queryForList("SELECT id,domain_l1_id,flow_version,pass_rule,enabled FROM qa_review_flow WHERE id=?", id);
+        if (rows.isEmpty()) throw new NoSuchElementException("审核流程不存在");
+        Map<String,Object> r = rows.get(0);
+        r.put("nodes", jdbc.queryForList("SELECT n.id,n.level_no,n.node_name,LISTAGG(u.real_name,',') WITHIN GROUP (ORDER BY u.real_name) reviewers,LISTAGG(fr.user_id,',') WITHIN GROUP (ORDER BY fr.user_id) reviewer_ids FROM qa_review_flow_node n LEFT JOIN qa_review_flow_reviewer fr ON fr.node_id=n.id LEFT JOIN sys_user u ON u.id=fr.user_id WHERE n.flow_id=? GROUP BY n.id,n.level_no,n.node_name ORDER BY n.level_no", id));
+        return r;
+    }
     @PutMapping("/{id}") @Transactional public Map<String,Object> update(@PathVariable String id,@Valid @RequestBody FlowRequest req) {
         if (!Set.of("ANY","ALL").contains(req.passRule().toUpperCase(Locale.ROOT))) throw new IllegalArgumentException("通过规则只能是ANY或ALL");
         Map<String,Object> old=jdbc.queryForList("SELECT domain_l1_id,flow_version FROM qa_review_flow WHERE id=? AND enabled=1 FOR UPDATE",id).stream().findFirst().orElseThrow(()->new NoSuchElementException("审核流程不存在"));

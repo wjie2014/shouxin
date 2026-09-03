@@ -534,56 +534,63 @@ function App() {
         </nav>
       </aside>
       <main>
-        <header>
-          <div>
-            <span className="eyebrow">知识资产治理</span>
-            <h2>{titles[tab] || "工作台"}</h2>
-            <div className="tab-strip">
-              {openTabs.map((k) => (
-                <button
-                  key={k}
-                  className={tab === k ? "tab-current" : ""}
-                  onClick={() => setTab(k)}
-                >
-                  {titles[k]}{" "}
-                  {k !== "dashboard" && (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeTab(k);
-                      }}
-                    >
-                      ×
-                    </span>
-                  )}
+        <header className="app-header">
+          <div className="header-main">
+            <div className="header-title">
+              <span className="eyebrow">知识资产治理</span>
+              <h2>{titles[tab] || "工作台"}</h2>
+            </div>
+            <div className="header-actions">
+              {reviewSummary.total > 0 && (
+                <button className="review-reminder" onClick={() => selectTab("reviews")}>
+                  <span className="review-reminder-icon">✓</span>
+                  <span>
+                    <b>待我审批 {reviewSummary.total} 条</b>
+                    <small>
+                      {[1, 2, 3]
+                        .filter((level) => Number(reviewSummary.byLevel?.[level] || 0) > 0)
+                        .map(
+                          (level) =>
+                            `${level}级 ${reviewSummary.byLevel[level]} 条`,
+                        )
+                        .join(" · ")}
+                    </small>
+                  </span>
                 </button>
-              ))}
+              )}
+              <span className={`status-dot ${systemHealthy === false ? "status-error" : ""}`} title="服务与数据库健康状态">{systemHealthy === null ? "检测中" : systemHealthy ? "系统正常" : "系统异常"}</span>
+              <div className="header-user-card" title={`当前账号：${user.username || "-"}`}>
+                <span className="header-user-avatar" aria-hidden="true">{String(user.realName || user.username || "用").slice(0,1)}</span>
+                <span className="header-user-copy"><b>{user.realName || user.username}</b><small>{user.username || "当前用户"}</small></span>
+              </div>
+              <button className="header-logout" onClick={logout} title="安全退出当前账号"><span aria-hidden="true">↪</span>退出登录</button>
             </div>
           </div>
-          <div className="header-actions">
-            {reviewSummary.total > 0 && (
-              <button className="review-reminder" onClick={() => selectTab("reviews")}>
-                <span className="review-reminder-icon">✓</span>
-                <span>
-                  <b>待我审批 {reviewSummary.total} 条</b>
-                  <small>
-                    {[1, 2, 3]
-                      .filter((level) => Number(reviewSummary.byLevel?.[level] || 0) > 0)
-                      .map(
-                        (level) =>
-                          `${level}级 ${reviewSummary.byLevel[level]} 条`,
-                      )
-                      .join(" · ")}
-                  </small>
-                </span>
+          <div className="tab-strip" role="tablist" aria-label="已打开页面">
+            {openTabs.map((k) => (
+              <button
+                key={k}
+                role="tab"
+                aria-selected={tab === k}
+                className={tab === k ? "tab-current" : ""}
+                onClick={() => setTab(k)}
+              >
+                <span className="tab-label">{titles[k]}</span>
+                {k !== "dashboard" && (
+                  <span
+                    className="tab-close"
+                    role="button"
+                    aria-label={`关闭${titles[k]}页签`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(k);
+                    }}
+                  >
+                    ×
+                  </span>
+                )}
               </button>
-            )}
-            <span className={`status-dot ${systemHealthy === false ? "status-error" : ""}`} title="服务与数据库健康状态">{systemHealthy === null ? "检测中" : systemHealthy ? "系统正常" : "系统异常"}</span>
-            <div className="header-user-card" title={`当前账号：${user.username || "-"}`}>
-              <span className="header-user-avatar" aria-hidden="true">{String(user.realName || user.username || "用").slice(0,1)}</span>
-              <span className="header-user-copy"><b>{user.realName || user.username}</b><small>{user.username || "当前用户"}</small></span>
-            </div>
-            <button className="header-logout" onClick={logout} title="安全退出当前账号"><span aria-hidden="true">↪</span>退出</button>
+            ))}
           </div>
         </header>
         {reviewSummary.total > 0 && tab === "dashboard" && (
@@ -4282,9 +4289,18 @@ function FlowConfig({ token }: { token: string }) {
   const loadFlows = (preferredId?: string) => {
     api("/admin/review-flows", {}, token)
       .then((x: any) => {
-        setFlows(x || []);
-        const next = (x || []).find((flow: any) => flow.id === preferredId) || x?.[0];
-        if (next) loadFlow(next.id);
+        const normalized = (Array.isArray(x) ? x : [])
+          .map((flow: any) => ({
+            ...flow,
+            id: flow.id ?? flow.ID,
+            domain_name: flow.domain_name ?? flow.DOMAIN_NAME,
+            domain_l1_id: flow.domain_l1_id ?? flow.DOMAIN_L1_ID,
+          }))
+          .filter((flow: any) => typeof flow.id === "string" && flow.id.length > 0);
+        setFlows(normalized);
+        const next = normalized.find((flow: any) => flow.id === preferredId) || normalized[0];
+        if (next?.id) loadFlow(next.id);
+        else setId("");
       })
       .catch(() => {});
   };
@@ -4295,6 +4311,10 @@ function FlowConfig({ token }: { token: string }) {
       .catch(() => {});
   }, [token]);
   const loadFlow = (flowId: string) => {
+    if (!flowId || flowId === "undefined" || flowId === "null") {
+      setId("");
+      return;
+    }
     setId(flowId);
     api(`/admin/review-flows/${flowId}`, {}, token)
       .then((f: any) => {

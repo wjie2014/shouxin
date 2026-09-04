@@ -31,10 +31,10 @@ public class DomainController {
         var rows = jdbc.queryForList("SELECT id, parent_id, domain_code, domain_name, description, level_no, path, sort_order FROM qa_domain WHERE enabled = 1 AND deleted = 0 ORDER BY level_no, sort_order, domain_code");
         Map<String, Map<String,Object>> nodes = new java.util.LinkedHashMap<>();
         for (var row : rows) {
-            var node = new java.util.LinkedHashMap<String,Object>(row);
-            node.put("domainName", row.get("domain_name"));
+            var node = new java.util.LinkedHashMap<String,Object>(lowerKeys(row));
+            node.put("domainName", value(row, "domain_name"));
             node.put("children", new java.util.ArrayList<Map<String,Object>>());
-            nodes.put(String.valueOf(row.get("id")), node);
+            nodes.put(String.valueOf(value(row, "id")), node);
         }
         List<Map<String,Object>> roots = new java.util.ArrayList<>();
         for (var node : nodes.values()) {
@@ -47,5 +47,16 @@ public class DomainController {
             }
         }
         return roots;
+    }
+
+    private Map<String, Object> lowerKeys(Map<String, Object> row) {
+        Map<String, Object> normalized = new java.util.LinkedHashMap<>();
+        row.forEach((key, value) -> normalized.put(key.toLowerCase(java.util.Locale.ROOT), value));
+        return normalized;
+    }
+
+    private Object value(Map<String, Object> row, String key) {
+        Object value = row.get(key);
+        return value != null ? value : row.get(key.toUpperCase(java.util.Locale.ROOT));
     }
 }

@@ -190,7 +190,11 @@ public class QaPairController {
     private Map<String, Object> detail(String id) {
         var rows = jdbc.queryForList("SELECT p.id, p.qa_code, p.status, p.author_id, p.current_version_id, p.domain_l1_id, p.domain_l2_id, p.domain_l3_id, p.created_at, p.updated_at, v.version_no, v.question_html, v.answer_html, v.reference_doc, v.extension_data,v.field_scheme_id,v.field_schema_snapshot, u.real_name, d1.domain_name domain_l1_name, d2.domain_name domain_l2_name, d3.domain_name domain_l3_name FROM qa_pair p JOIN qa_pair_version v ON v.id = p.current_version_id JOIN sys_user u ON u.id = p.author_id JOIN qa_domain d1 ON d1.id=p.domain_l1_id JOIN qa_domain d2 ON d2.id=p.domain_l2_id LEFT JOIN qa_domain d3 ON d3.id=p.domain_l3_id WHERE p.id = ? AND p.deleted = 0", id);
         if (rows.isEmpty()) throw new NoSuchElementException("问答对不存在");
-        Map<String, Object> r = new LinkedHashMap<>(rows.get(0));
+        // DM8 returns unquoted column labels in uppercase. Normalize the
+        // result once so workflow checks and the JSON contract are stable
+        // regardless of database driver casing.
+        Map<String, Object> r = new LinkedHashMap<>();
+        rows.get(0).forEach((key, value) -> r.put(key.toLowerCase(Locale.ROOT), value));
         r.put("authorId", r.remove("author_id")); r.put("currentVersionId", r.remove("current_version_id"));
         r.put("domainL1Id", r.remove("domain_l1_id")); r.put("domainL2Id", r.remove("domain_l2_id")); r.put("domainL3Id", r.remove("domain_l3_id"));
         return r;

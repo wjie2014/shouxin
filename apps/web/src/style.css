@@ -618,20 +618,33 @@ nav button.active b {
    主区域 & 页头
    ========================================================================= */
 main {
+  --main-gutter: 36px;
   flex: 1;
   min-width: 0;
-  padding: 28px 36px 48px;
+  padding: 28px var(--main-gutter) 48px;
   overflow-x: hidden;
 }
 
-header {
+.app-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  flex-direction: column;
+  gap: 0;
   margin-bottom: 22px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
+}
+
+.header-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-title {
+  flex: 1 1 320px;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -681,10 +694,14 @@ h2 {
 .status-dot.status-error:before { background: #ff4d4f; box-shadow: 0 0 0 4px rgba(255,77,79,.14); }
 
 .header-actions {
-  flex: none;
+  flex: 0 1 auto;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 9px;
+  max-width: 100%;
+  margin-left: auto;
   padding: 5px;
   border: 1px solid #e1e8ef;
   border-radius: 12px;
@@ -722,15 +739,18 @@ h2 {
 .header-user-copy small { color: #8a98a8; font-size: 11px; font-weight: 400; }
 
 .header-logout {
+  flex: none;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   height: 36px;
-  padding: 0 11px;
-  border: 1px solid transparent;
+  min-width: 88px;
+  padding: 0 13px;
+  border: 1px solid #dbe3eb;
   border-radius: 8px;
-  background: transparent;
-  color: #657587;
+  background: #fff;
+  color: #526477;
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
@@ -899,11 +919,18 @@ h2 {
 /* 多页签条 */
 .tab-strip {
   display: flex;
-  gap: 6px;
-  margin-top: 14px;
-  max-width: 100%;
+  align-items: flex-end;
+  gap: 3px;
+  width: auto;
+  min-height: 49px;
+  margin: 18px calc(-1 * var(--main-gutter)) -16px;
+  padding: 8px var(--main-gutter) 0;
   overflow-x: auto;
-  padding-bottom: 2px;
+  overflow-y: hidden;
+  border-top: 1px solid #e0e7ef;
+  border-bottom: 1px solid #d6e0ea;
+  background: #edf2f7;
+  scrollbar-width: thin;
 }
 
 .tab-strip::-webkit-scrollbar {
@@ -916,44 +943,71 @@ h2 {
 }
 
 .tab-strip button {
+  position: relative;
+  flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  color: var(--text);
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  min-width: 106px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: #5b6d80;
   font-size: 13px;
+  font-weight: 500;
   white-space: nowrap;
 }
 
 .tab-strip button:hover {
-  color: var(--primary);
-  border-color: #adccff;
+  color: #245f99;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .tab-strip button.tab-current {
-  background: var(--primary-soft);
+  z-index: 1;
+  background: var(--canvas);
   color: var(--primary);
-  border-color: #adccff;
+  border-color: #cfdbe7;
   font-weight: 600;
+  box-shadow: 0 -2px 8px rgba(31, 63, 92, 0.06);
 }
 
-.tab-strip span {
+.tab-strip button.tab-current::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 10px;
+  right: 10px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--primary);
+}
+
+.tab-strip .tab-label {
+  width: auto;
+  height: auto;
+  color: inherit;
+  font-size: inherit;
+}
+
+.tab-strip .tab-close {
   display: inline-grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  color: var(--muted);
-  font-size: 14px;
+  color: #8795a5;
+  font-size: 15px;
   line-height: 1;
 }
 
-.tab-strip span:hover {
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--ink);
+.tab-strip .tab-close:hover {
+  background: #dbe5ef;
+  color: #31465a;
 }
 
 /* =========================================================================
@@ -2248,6 +2302,25 @@ tbody tr:last-child td {
   white-space: normal;
   line-height: 1.7;
   color: var(--text);
+}
+
+/* 富文本字段使用独立容器，避免将工具栏中的图片选择 label 嵌套在外层 label，
+   这样在 Chromium/Safari 下点击编辑区不会触发表单标签的焦点切换。 */
+.modal-card .rich-field {
+  display: block;
+  margin-top: 16px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.modal-card .rich-field-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.modal-card .rich-field .rich-editor-shell {
+  margin-top: 0;
 }
 
 .detail-grid {
@@ -3912,7 +3985,8 @@ select[multiple] option:checked {
 
 @media (max-width: 1024px) {
   main {
-    padding: 24px 24px 40px;
+    --main-gutter: 24px;
+    padding: 24px var(--main-gutter) 40px;
   }
   aside {
     width: 220px;
@@ -3972,7 +4046,8 @@ select[multiple] option:checked {
     display: none;
   }
   main {
-    padding: 20px 16px 32px;
+    --main-gutter: 16px;
+    padding: 20px var(--main-gutter) 32px;
   }
   header {
     flex-direction: column;

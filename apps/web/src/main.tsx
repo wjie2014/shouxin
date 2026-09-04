@@ -49,6 +49,14 @@ const dateTime = (v: any) =>
   v ? String(v).replace("T", " ").slice(0, 19) : "-";
 const rowValue = (row: any, key: string) =>
   row?.[key] ?? row?.[key.toUpperCase()] ?? row?.[key.toLowerCase()];
+const normalizeApiRow = (row: any) => {
+  if (!row || typeof row !== "object" || Array.isArray(row)) return row;
+  const normalized: Record<string, any> = { ...row };
+  Object.entries(row).forEach(([key, value]) => {
+    normalized[key.toLowerCase()] = value;
+  });
+  return normalized;
+};
 function useStoredState<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(() => {
     try { const saved = sessionStorage.getItem(key); return saved == null ? initial : JSON.parse(saved); }
@@ -867,11 +875,11 @@ function Pairs({ token }: { token: string }) {
     );
   const openDetail = (item: any) =>
     api("/qa-pairs/" + (item.id || item.ID), {}, token)
-      .then(setSelected)
+      .then((detail: any) => setSelected(normalizeApiRow(detail)))
       .catch((e: any) => setMessage(e.message || "详情加载失败"));
   const openEdit = (item: any) =>
     api("/qa-pairs/" + (item.id || item.ID), {}, token)
-      .then(setEditingItem)
+      .then((detail: any) => setEditingItem(normalizeApiRow(detail)))
       .catch((e: any) => setMessage(e.message || "编辑数据加载失败"));
   const batchSubmit = () => {
     if (!checked.length) {
@@ -1369,13 +1377,13 @@ function PairDetail({
   useEffect(() => setDetailPage(1), [tab]);
   useEffect(() => {
     api(`/reviews/history?qaPairId=${item.id}`, {}, token)
-      .then((x) => setHistory(Array.isArray(x) ? x : x?.items || []))
+      .then((x) => setHistory((Array.isArray(x) ? x : x?.items || []).map(normalizeApiRow)))
       .catch(() => {});
     api(`/qa-pairs/${item.id}/attachments`, {}, token)
-      .then((x) => setAttachments(Array.isArray(x) ? x : []))
+      .then((x) => setAttachments((Array.isArray(x) ? x : []).map(normalizeApiRow)))
       .catch(() => {});
     api(`/qa-pairs/${item.id}/versions`, {}, token)
-      .then((x) => setVersions(Array.isArray(x) ? x : []))
+      .then((x) => setVersions((Array.isArray(x) ? x : []).map(normalizeApiRow)))
       .catch(() => {});
   }, [item.id, token]);
   const accessAttachment = async (attachment: any, preview = false) => {
@@ -1444,19 +1452,19 @@ function PairDetail({
             <div className="detail-grid">
               <p>
                 <b>一级目录</b>
-                {item.domain_l1_name || item.domainL1Id || "-"}
+                {item.domain_l1_name || item.domain_l1_id || item.domainL1Id || "-"}
               </p>
               <p>
                 <b>二级目录</b>
-                {item.domain_l2_name || item.domainL2Id || "-"}
+                {item.domain_l2_name || item.domain_l2_id || item.domainL2Id || "-"}
               </p>
               <p>
                 <b>三级目录</b>
-                {item.domain_l3_name || item.domainL3Id || "-"}
+                {item.domain_l3_name || item.domain_l3_id || item.domainL3Id || "-"}
               </p>
               <p>
                 <b>编写人</b>
-                {item.real_name || "-"}
+                {item.real_name || item.author_id || "-"}
               </p>
               <p>
                 <b>版本号</b>
@@ -1921,7 +1929,7 @@ function EditPair({
       setError("问题和答案不能为空");
       return;
     }
-    if(submit){const missing=missingSchemeFields(scheme,extensions,{questionText:q.replace(/<[^>]+>/g,"").trim(),answerText:a.replace(/<[^>]+>/g,"").trim(),referenceDoc:doc,author:item.authorId||item.author_id,attachments:"existing"});if(missing.length){setError(`请填写必填字段：${missing.join("、")}`);return;}}
+    if(submit){const missing=missingSchemeFields(scheme,extensions,{questionText:q.replace(/<[^>]+>/g,"").trim(),answerText:a.replace(/<[^>]+>/g,"").trim(),referenceDoc:doc,author:item.authorId||item.author_id,attachments:"existing",domainL1Id:item.domain_l1_id||item.domainL1Id||item.domain_l1,domainL2Id:item.domain_l2_id||item.domainL2Id||item.domain_l2,domainL3Id:item.domain_l3_id||item.domainL3Id||item.domain_l3});if(missing.length){setError(`请填写必填字段：${missing.join("、")}`);return;}}
     try {
       setSaving(true);
       setError("");
@@ -1996,14 +2004,14 @@ function EditPair({
           依据文档
           <input value={doc} onChange={(e) => setDoc(e.target.value)} />
         </label>
-        <label>
-          问题
+        <div className="rich-field">
+          <span className="rich-field-label">问题</span>
           <RichTextEditor label="问题" value={q} onChange={setQ} />
-        </label>
-        <label>
-          答案
+        </div>
+        <div className="rich-field">
+          <span className="rich-field-label">答案</span>
           <RichTextEditor label="答案" value={a} onChange={setA} />
-        </label>
+        </div>
         <DynamicFields scheme={scheme} values={extensions} setValues={setExtensions} users={schemeUsers}/>
         {error && <div className="error">{error}</div>}
         </div>
@@ -2065,7 +2073,7 @@ function CreatePair({
       setError("问题和答案不能为空");
       return;
     }
-    if(submit){const missing=missingSchemeFields(scheme,extensions,{questionText:q.replace(/<[^>]+>/g,"").trim(),answerText:a.replace(/<[^>]+>/g,"").trim(),referenceDoc,author:author?.id,attachments:files.length?files:""});if(missing.length){setError(`请填写必填字段：${missing.join("、")}`);return;}}
+    if(submit){const missing=missingSchemeFields(scheme,extensions,{questionText:q.replace(/<[^>]+>/g,"").trim(),answerText:a.replace(/<[^>]+>/g,"").trim(),referenceDoc,author:author?.id,attachments:files.length?files:"",domainL1Id:l1,domainL2Id:l2,domainL3Id:l3});if(missing.length){setError(`请填写必填字段：${missing.join("、")}`);return;}}
     try {
       const x: any = await api(
         "/qa-pairs",
@@ -2084,10 +2092,14 @@ function CreatePair({
         },
         token,
       );
+      // DM8 may return unquoted column aliases in uppercase. Resolve the
+      // generated pair id once and reuse it for attachment uploads/submit.
+      const pairId = x?.id || x?.ID;
+      if (!pairId) throw new Error("问答对创建成功，但服务端未返回问答对标识");
       for (const file of [...files, ...extensionFiles(extensions)]) {
         const fd = new FormData();
         fd.append("file", file);
-        const uploadResponse = await fetch(API + `/qa-pairs/${x.id}/attachments`, {
+        const uploadResponse = await fetch(API + `/qa-pairs/${pairId}/attachments`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: fd,
@@ -2098,7 +2110,7 @@ function CreatePair({
         }
       }
       if (submit)
-        await api(`/qa-pairs/${x.id}/submit`, { method: "POST" }, token);
+        await api(`/qa-pairs/${pairId}/submit`, { method: "POST" }, token);
       saved();
     } catch (e: any) {
       setError(e.message || "保存失败");
@@ -2179,14 +2191,14 @@ function CreatePair({
           </label>
         </div>
         <div className="form-field-block"><span>附件</span><FileDrop files={files} onChange={setFiles}/></div>
-        <label>
-          问题（支持富文本）
+        <div className="rich-field">
+          <span className="rich-field-label">问题（支持富文本）</span>
           <RichTextEditor label="问题" value={q} onChange={setQ} />
-        </label>
-        <label>
-          答案（支持富文本）
+        </div>
+        <div className="rich-field">
+          <span className="rich-field-label">答案（支持富文本）</span>
           <RichTextEditor label="答案" value={a} onChange={setA} />
-        </label>
+        </div>
         <DynamicFields scheme={scheme} values={extensions} setValues={setExtensions} users={schemeUsers}/>
         {error && <div className="error">{error}</div>}
         </div>
@@ -2903,7 +2915,16 @@ function Admin({ token, initialTab }: { token: string; initialTab?: string }) {
   useEffect(load, [tab, token, page, pageSize, logFilters.sortDir]);
   useEffect(() => {
     api("/admin/roles", {}, token)
-      .then((x) => setRoles(x || []))
+      .then((x) => setRoles((Array.isArray(x) ? x : []).map((role: any) => ({
+        ...role,
+        id: rowValue(role, "id"),
+        role_code: rowValue(role, "role_code"),
+        role_name: rowValue(role, "role_name"),
+        description: rowValue(role, "description"),
+        built_in: rowValue(role, "built_in"),
+        enabled: rowValue(role, "enabled"),
+        permission_codes: rowValue(role, "permission_codes"),
+      }))))
       .catch(() => setRoles([]));
     api("/admin/roles/permissions/tree", {}, token)
       .then((x) => setPermissionTree(Array.isArray(x) ? x : []))
@@ -2918,14 +2939,14 @@ function Admin({ token, initialTab }: { token: string; initialTab?: string }) {
     setFormError("");
     if (tab === "users")
       setForm({
-        username: r.username || "",
-        realName: r.real_name || "",
+        username: rowValue(r, "username") || "",
+        realName: rowValue(r, "real_name") || "",
         password: "",
-        email: r.email || "",
-        mobile: r.mobile || "",
-        enabled: r.enabled !== 0,
-        unitId: r.unit_id || "",
-        roleCodes: String(r.role_codes || "QA_SUBMITTER")
+        email: rowValue(r, "email") || "",
+        mobile: rowValue(r, "mobile") || "",
+        enabled: Number(rowValue(r, "enabled") ?? 1) !== 0,
+        unitId: rowValue(r, "unit_id") || "",
+        roleCodes: String(rowValue(r, "role_codes") || "QA_SUBMITTER")
           .split(",")
           .filter(Boolean),
       });
@@ -3367,10 +3388,10 @@ function AdminForm({ tab, editing, form, setForm, roles, permissionTree, units, 
                 }
               >
                 {roles
-                  .filter((x: any) => x.enabled !== 0)
+                  .filter((x: any) => Number(rowValue(x, "enabled") ?? 1) !== 0)
                   .map((x: any) => (
-                    <option key={x.id} value={x.role_code}>
-                      {x.role_name}
+                    <option key={rowValue(x, "id")} value={rowValue(x, "role_code")}>
+                      {rowValue(x, "role_name")}
                     </option>
                   ))}
               </select>
@@ -3638,7 +3659,19 @@ function FieldSchemeUI({ token }: { token: string }) {
     [fieldPage, setFieldPage] = useStoredState("qa_state_fields_field_page", 1),
     [pageSize, setPageSize] = useStoredState("qa_state_fields_page_size", 10);
   const load = () =>
-    api("/field-schemes", {}, token).then((x) => setSchemes(x || []));
+    api("/field-schemes", {}, token).then((x) =>
+      setSchemes(
+        (Array.isArray(x) ? x : []).map((scheme: any) => ({
+          ...scheme,
+          id: scheme.id ?? scheme.ID,
+          scheme_code: scheme.scheme_code ?? scheme.SCHEME_CODE,
+          scheme_name: scheme.scheme_name ?? scheme.SCHEME_NAME,
+          description: scheme.description ?? scheme.DESCRIPTION,
+          is_default: scheme.is_default ?? scheme.IS_DEFAULT,
+          enabled: scheme.enabled ?? scheme.ENABLED,
+        })),
+      ),
+    );
   useEffect(() => {
     load();
   }, [token]);
@@ -4307,7 +4340,18 @@ function FlowConfig({ token }: { token: string }) {
   useEffect(() => {
     loadFlows();
     api("/admin/users/reviewer-options", {}, token)
-      .then((x: any) => setUsers(Array.isArray(x) ? x : []))
+      .then((x: any) =>
+        setUsers(
+          (Array.isArray(x) ? x : []).map((user: any) => ({
+            ...user,
+            id: user.id ?? user.ID,
+            username: user.username ?? user.USERNAME,
+            real_name: user.real_name ?? user.REAL_NAME,
+            enabled: user.enabled ?? user.ENABLED,
+            role_names: user.role_names ?? user.ROLE_NAMES,
+          })),
+        ),
+      )
       .catch(() => {});
   }, [token]);
   const loadFlow = (flowId: string) => {
@@ -4318,10 +4362,10 @@ function FlowConfig({ token }: { token: string }) {
     setId(flowId);
     api(`/admin/review-flows/${flowId}`, {}, token)
       .then((f: any) => {
-        setRule(f.pass_rule || "ALL");
+        setRule(f.pass_rule ?? f.PASS_RULE ?? "ALL");
         const ns = (f.nodes || []).map((n: any) => ({
-          name: n.node_name || "",
-          ids: String(n.reviewer_ids || "")
+          name: n.node_name ?? n.NODE_NAME ?? "",
+          ids: String(n.reviewer_ids ?? n.REVIEWER_IDS ?? "")
             .split(",")
             .filter(Boolean),
         }));
@@ -4791,7 +4835,7 @@ function CustomStats({ token }: { token: string }) {
           <label>一级目录<select value={request.filters.domainL1Ids[0]||""} onChange={(e)=>{setFilter("domainL1Ids",e.target.value?[e.target.value]:[]);setFilter("domainL2Ids",[]);setFilter("domainL3Ids",[]);}}><option value="">全部一级目录</option>{l1Domains.map((x:any)=><option key={field(x,"id")} value={field(x,"id")}>{field(x,"domain_name")}</option>)}</select></label>
           <label>二级目录<select value={request.filters.domainL2Ids[0]||""} onChange={(e)=>{setFilter("domainL2Ids",e.target.value?[e.target.value]:[]);setFilter("domainL3Ids",[]);}}><option value="">全部二级目录</option>{l2Domains.map((x:any)=><option key={field(x,"id")} value={field(x,"id")}>{field(x,"domain_name")}</option>)}</select></label>
           <label>三级目录<select value={request.filters.domainL3Ids[0]||""} onChange={(e)=>setFilter("domainL3Ids",e.target.value?[e.target.value]:[])}><option value="">全部三级目录</option>{l3Domains.map((x:any)=><option key={field(x,"id")} value={field(x,"id")}>{field(x,"domain_name")}</option>)}</select></label>
-          <label>状态<select multiple value={request.filters.statuses} onChange={(e)=>setFilter("statuses",Array.from(e.currentTarget.selectedOptions).map((x: HTMLOptionElement)=>x.value))}>{(options.statuses||[]).map((x:string)=><option key={x} value={x}>{statusLabel[x]||x}</option>)}</select></label>
+          <label>状态<select value={Array.isArray(request.filters.statuses)?(request.filters.statuses[0]||""):(request.filters.statuses||"")} onChange={(e)=>setFilter("statuses",e.target.value?[e.target.value]:[])}><option value="">全部状态</option>{(options.statuses||[]).map((x:string)=><option key={x} value={x}>{statusLabel[x]||x}</option>)}</select></label>
           <label>关键词<input value={request.filters.keyword} placeholder="编号、问题或答案" onChange={(e)=>setFilter("keyword",e.target.value)}/></label>
         </div>
         {showMore && <div className="analysis-filter-grid analysis-more-filters">

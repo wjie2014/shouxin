@@ -38,6 +38,9 @@ logging:
   pattern:
     level: "%5p [request:%X{requestId:-n/a}]"
 app:
+  cors:
+    # Comma-separated Spring origin patterns. Override with APP_CORS_ALLOWED_ORIGINS in production.
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*,http://106.14.146.19:*,https://106.14.146.19:*}
   jwt:
     secret: ${JWT_SECRET:change-me-in-production}
     access-token-minutes: ${JWT_ACCESS_MINUTES:30}

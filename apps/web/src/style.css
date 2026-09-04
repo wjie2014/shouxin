@@ -378,9 +378,13 @@ aside {
 }
 
 aside .brand {
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--nav-text-strong);
-  margin: 4px 14px 26px;
+  margin: 4px 12px 24px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1426,6 +1430,7 @@ section.panel {
 .toolbar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -1444,6 +1449,7 @@ section.panel {
 .toolbar button,
 .tabs button,
 .button {
+  flex: none;
   height: 38px;
   padding: 0 16px;
   display: inline-flex;
@@ -1456,6 +1462,7 @@ section.panel {
   color: var(--text);
   font-weight: 500;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .toolbar button:hover,
@@ -1539,7 +1546,9 @@ select:not([multiple]):disabled {
 
 .filter-toolbar select,
 .toolbar select {
+  flex: none;
   width: auto;
+  min-width: 128px;
 }
 
 .filter-toolbar input[type="date"] {
@@ -3989,7 +3998,11 @@ select[multiple] option:checked {
     padding: 24px var(--main-gutter) 40px;
   }
   aside {
-    width: 220px;
+    width: 208px;
+  }
+  aside .brand {
+    font-size: 16px;
+    margin-bottom: 20px;
   }
   .flow-basic-grid {
     grid-template-columns: 1fr;
@@ -4027,16 +4040,22 @@ select[multiple] option:checked {
   }
   nav {
     display: flex;
-    overflow-x: auto;
+    align-items: center;
     gap: 6px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
   }
   .nav-section {
-    margin: 0;
+    display: contents;
   }
   .nav-title {
     display: none;
   }
   nav button {
+    flex: none;
+    height: 38px;
     white-space: nowrap;
     width: auto;
     margin: 0;

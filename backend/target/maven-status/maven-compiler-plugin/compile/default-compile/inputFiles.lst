@@ -14,8 +14,10 @@
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/database/DatabaseMigrationRunner.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/domain/DomainAdminController.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/domain/DomainController.java
+/Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/domain/DomainExcelController.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/field/FieldSchemeAdminController.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/field/FieldSchemeController.java
+/Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/field/FieldSchemeService.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/importer/TemplateExportController.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/importer/TemplateImportController.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/interfaces/HealthController.java
@@ -27,4 +29,10 @@
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/review/ReviewFlowBootstrap.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/review/ReviewWorkflow.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/shared/ApiExceptionHandler.java
+/Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/statistics/AnalysisController.java
+/Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/statistics/AnalysisExportService.java
+/Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/statistics/AnalysisReportService.java
+/Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/statistics/AnalysisSchemeBootstrap.java
+/Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/statistics/AnalysisSchemeController.java
+/Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/statistics/AnalysisService.java
 /Users/wangjie/projects/shouxin/backend/src/main/java/com/shouxin/qa/statistics/DashboardController.java
